@@ -165,7 +165,15 @@ class App extends Component {
   render() {
     return (
       <div>
-        <button className="btn btn-dark">BUTTON</button>
+        <div id="info">
+          <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener">Zexi Han</a></div>
+          <div>left mouse button + move: Panning the map</div>
+          <div>right mouse button + move: Rotating the view</div>
+          <div>mouse wheel: Zooms up and down</div>
+          <div>+/-: Increase/Decrease point size</div>
+          <div>c: Change color</div>
+        </div>
+        {/* <button className="btn btn-dark">BUTTON</button> */}
         <div
           style={{ width: window.innerWidth, height: window.innerHeight }}
           ref={(mount) => { this.mount = mount }}
