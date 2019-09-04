@@ -1,125 +1,119 @@
 import React, { Component } from 'react';
+
 import * as THREE from 'three';
 import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js';
-import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
+import { MapControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
-var scene, camera, controls, stats, renderer, loader;
+var camera, controls, scene, stats, renderer, loader;
 
 class App extends Component {
   componentDidMount() {
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
     
-    //ADD SCENE
     scene = new THREE.Scene();
-    scene.background = new THREE.Color( 0x000000 );
+    scene.background = new THREE.Color( 0xcccccc );
     
-    //ADD CAMERA
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( width, height );
+    this.mount.appendChild( renderer.domElement );
+
     camera = new THREE.PerspectiveCamera(
       45,
       width / height,
       1,
       1000
     );
-    camera.position.x = 0;
-    camera.position.y = 0;
-		camera.position.z = 0;
+    camera.position.set(0, 0, 0);
     camera.up.set( 0, 0, 1 );
-    scene.add(camera);
+    //scene.add(camera);
+    
+    // controls
 
-    //ADD RENDERER
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(width, height);
-    this.mount.appendChild(renderer.domElement);
+    controls = new MapControls( camera, renderer.domElement );
+    
+    //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
 
-    //ADD PCDLOADER
+    controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+    controls.dampingFactor = 0.05;
+    
+    controls.screenSpacePanning = false;
+    
+    controls.minDistance = 1;
+    controls.maxDistance = 500;
+    
+    controls.maxPolarAngle = Math.PI / 2;
+
+    // world
+
     loader = new PCDLoader();
     loader.load( './data/pcd/000015.pcd', function ( points ) {
-      points.material.color.setHex( 0xffffff );
-      points.material.size = 0.02;
+      points.material.color.setHex( 0x000000 );
+      points.material.size = 0.04;
       scene.add( points );
       var center = points.geometry.boundingSphere.center;
       controls.target.set( center.x, center.y, center.z );
       controls.update();
     } );
 
-    controls = new TrackballControls( camera, renderer.domElement );
-		controls.rotateSpeed = 2.0;
-		controls.zoomSpeed = 0.3;
-		controls.panSpeed = 0.2;
-		controls.noZoom = false;
-		controls.noPan = false;
-		controls.staticMoving = true;
-		controls.dynamicDampingFactor = 0.3;
-		controls.minDistance = 0.3;
-		controls.maxDistance = 0.3 * 100;
-
+  
     stats = new Stats();
     this.mount.appendChild( stats.dom );
-    //ADD CUBE
-    // const geometry = new THREE.BoxGeometry(1, 1, 1);
-    // const material = new THREE.MeshBasicMaterial({ color: '#433F81'     });
-    // this.cube = new THREE.Mesh(geometry, material);
-    // this.scene.add(this.cube);
-    this.start();
+
 
     window.addEventListener( 'resize', this.onWindowResize, false );
 
-    window.addEventListener( 'keypress', this.keyboard );
-  }
+    window.addEventListener( 'keypress', this.onKeyPress );
 
-  componentWillUnmount() {
-    this.stop();
-    this.mount.removeChild(renderer.domElement);
-  }
-
-  start = () => {
-    if (!this.frameId) {
-      this.frameId = requestAnimationFrame(this.animate);
-    }
-  }
-
-  stop = () => {
-    cancelAnimationFrame(this.frameId);
+    this.animate();
   }
 
   animate = () => {
     
-    // this.cube.rotation.x += 0.01;
-    // this.cube.rotation.y += 0.01;
+    requestAnimationFrame( this.animate );
+
     controls.update();
+    
     stats.update();
+    
     this.renderScene();
-    this.frameId = requestAnimationFrame(this.animate);
+
   }
 
   renderScene = () => {
+
     renderer.render(scene, camera);
+
   }
 
   onWindowResize = () => {
+    
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+   
     renderer.setSize( window.innerWidth, window.innerHeight );
-    controls.handleResize();
+
   }
 
-  keyboard = ( ev ) => {
+  onKeyPress = ( e ) => {
+    console.log(e.keyCode);
     var points = scene.getObjectByName( '000015.pcd' );
-    switch ( ev.key || String.fromCharCode( ev.keyCode || ev.charCode ) ) {
-      case '+':
+    switch ( e.keyCode ) {
+      case 61:
         points.material.size *= 1.2;
         points.material.needsUpdate = true;
         break;
-      case '-':
+      case 45:
         points.material.size /= 1.2;
         points.material.needsUpdate = true;
         break;
-      case 'c':
+      case 99:
         points.material.color.setHex( Math.random() * 0xffffff );
         points.material.needsUpdate = true;
+        break;
+      default:
         break;
     }
   }
