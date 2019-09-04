@@ -5,6 +5,8 @@ import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js';
 import { MapControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
+import '../static/App.css';
+
 var camera, controls, scene, stats, renderer, loader;
 
 class App extends Component {
@@ -52,13 +54,55 @@ class App extends Component {
     loader.load( './data/pcd/000015.pcd', function ( points ) {
       points.material.color.setHex( 0x000000 );
       points.material.size = 0.04;
+      
       scene.add( points );
+      
       var center = points.geometry.boundingSphere.center;
       controls.target.set( center.x, center.y, center.z );
       controls.update();
     } );
 
-  
+    // bbox
+
+    fetch('./data/bbox/000015.txt')
+      .then((res) => res.text())
+      .then(text => {
+        var lines = text.split(/\r\n|\n/);
+        lines = lines.map(line => { return line.split(' ') });
+        var bbox = {};
+        for (var i = 0; i < lines.length / 8; i++) {
+          bbox[i] = [];
+          for (var j = 0; j < 8; j++) {
+            bbox[i].push(lines[i * 8 + j].slice(1, 4).map(Number));
+          }
+        }
+        console.log(bbox);
+        console.log(bbox[0][0]);
+
+        var material = new THREE.LineBasicMaterial( { color: 0xff0000, linewidth: 2 } );
+        
+        for (var i = 0; i < 4; i++) {
+          var geometry = new THREE.Geometry();
+          for (var j = 0; j < 8; j++) {
+            geometry.vertices.push(new THREE.Vector3( bbox[i][j][2], -bbox[i][j][0], -bbox[i][j][1] ) );
+            if (j === 3) {
+              geometry.vertices.push(new THREE.Vector3( bbox[i][0][2], -bbox[i][0][0], -bbox[i][0][1] ) );
+            }
+            if (j === 7) {
+              geometry.vertices.push(new THREE.Vector3( bbox[i][4][2], -bbox[i][4][0], -bbox[i][4][1] ) );
+            }
+          }
+          var line = new THREE.Line( geometry, material );
+          scene.add( line );
+        }
+        
+    });
+
+    var axesHelper = new THREE.AxesHelper( 5 );
+    scene.add( axesHelper );
+    
+    // stats
+    
     stats = new Stats();
     this.mount.appendChild( stats.dom );
 
@@ -120,10 +164,15 @@ class App extends Component {
   
   render() {
     return (
-      <div
-        style={{ width: window.innerWidth, height: window.innerHeight }}
-        ref={(mount) => { this.mount = mount }}
-      />
+      <div>
+        <button className="btn btn-dark">BUTTON</button>
+        <div
+          style={{ width: window.innerWidth, height: window.innerHeight }}
+          ref={(mount) => { this.mount = mount }}
+        />
+        
+      </div>
+      
     );
   }
 }
