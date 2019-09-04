@@ -7,6 +7,8 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import '../static/App.css';
 
+const filename = '000015';
+
 var camera, controls, scene, stats, renderer, loader;
 
 class App extends Component {
@@ -28,7 +30,7 @@ class App extends Component {
       1,
       1000
     );
-    camera.position.set(0, 0, 0);
+    camera.position.set(0, 20, 5);
     camera.up.set( 0, 0, 1 );
     //scene.add(camera);
     
@@ -51,7 +53,7 @@ class App extends Component {
     // world
 
     loader = new PCDLoader();
-    loader.load( './data/pcd/000015.pcd', function ( points ) {
+    loader.load( './data/pcd/' + filename + '.pcd', function ( points ) {
       points.material.color.setHex( 0x000000 );
       points.material.size = 0.04;
       
@@ -64,7 +66,7 @@ class App extends Component {
 
     // bbox
 
-    fetch('./data/bbox/000015.txt')
+    fetch('./data/bbox/' + filename + '.txt')
       .then((res) => res.text())
       .then(text => {
         var lines = text.split(/\r\n|\n/);
@@ -143,7 +145,7 @@ class App extends Component {
 
   onKeyPress = ( e ) => {
     console.log(e.keyCode);
-    var points = scene.getObjectByName( '000015.pcd' );
+    var points = scene.getObjectByName( filename + '.pcd' );
     switch ( e.keyCode ) {
       case 61:
         points.material.size *= 1.2;
