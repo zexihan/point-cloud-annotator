@@ -7,12 +7,27 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import '../static/App.css';
 
-const filename = '000015';
-
 var camera, controls, scene, stats, renderer, loader;
 
+var filename = 'store_100k';
+
 class App extends Component {
+  constructor(props) {
+    super(props);
+    
+    this.state = {
+      loaded: 0
+    };
+  }
+
   componentDidMount() {
+    this.init(filename);
+
+    this.animate();
+  }
+
+  init = (filename) => {
+
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
     
@@ -30,7 +45,7 @@ class App extends Component {
       1,
       1000
     );
-    camera.position.set(0, 20, 5);
+    camera.position.set(5, -5, 5);
     camera.up.set( 0, 0, 1 );
     //scene.add(camera);
     
@@ -53,8 +68,13 @@ class App extends Component {
     // world
 
     loader = new PCDLoader();
-    loader.load( './data/pcd/' + filename + '.pcd', function ( points ) {
-      points.material.color.setHex( 0x000000 );
+    loader.load( './data/pcd/' + filename + '.pcd', 
+    ( points ) => {
+
+      if (points.material.color.r !== 1) {
+        points.material.color.setHex( 0x000000 );
+      }
+
       points.material.size = 0.04;
       
       scene.add( points );
@@ -62,49 +82,56 @@ class App extends Component {
       var center = points.geometry.boundingSphere.center;
       controls.target.set( center.x, center.y, center.z );
       controls.update();
+    },
+    ( xhr ) => {
+      this.setState({
+        loaded: Math.round(xhr.loaded / xhr.total * 100)
+      });
+
+      console.log( ( this.state.loaded ) + '% loaded' );
+  
     } );
 
     // bbox
 
-    fetch('./data/bbox/' + filename + '.txt')
-      .then((res) => res.text())
-      .then(text => {
-        var lines = text.split(/\r\n|\n/);
-        lines = lines.map(line => { return line.split(' ') });
-        var bbox = {};
-        for (var i = 0; i < lines.length / 8; i++) {
-          bbox[i] = [];
-          for (var j = 0; j < 8; j++) {
-            bbox[i].push(lines[i * 8 + j].slice(1, 4).map(Number));
-          }
-        }
-        console.log(bbox);
-        console.log(bbox[0][0]);
+    // fetch('./data/bbox/' + filename + '.txt')
+    //   .then((res) => res.text())
+    //   .then(text => {
+    //     var lines = text.split(/\r\n|\n/);
+    //     lines = lines.map(line => { return line.split(' ') });
+    //     var bbox = {};
+    //     for (var i = 0; i < lines.length / 8; i++) {
+    //       bbox[i] = [];
+    //       for (var j = 0; j < 8; j++) {
+    //         bbox[i].push(lines[i * 8 + j].slice(1, 4).map(Number));
+    //       }
+    //     }
+    //     console.log(bbox);
+    //     console.log(bbox[0][0]);
 
-        var material = new THREE.LineBasicMaterial( { color: 0xff0000, linewidth: 2 } );
+    //     var material = new THREE.LineBasicMaterial( { color: 0xff0000, linewidth: 2 } );
         
-        for (var i = 0; i < 4; i++) {
-          var geometry = new THREE.Geometry();
-          for (var j = 0; j < 8; j++) {
-            geometry.vertices.push(new THREE.Vector3( bbox[i][j][2], -bbox[i][j][0], -bbox[i][j][1] ) );
-            if (j === 3) {
-              geometry.vertices.push(new THREE.Vector3( bbox[i][0][2], -bbox[i][0][0], -bbox[i][0][1] ) );
-            }
-            if (j === 7) {
-              geometry.vertices.push(new THREE.Vector3( bbox[i][4][2], -bbox[i][4][0], -bbox[i][4][1] ) );
-            }
-          }
-          var line = new THREE.Line( geometry, material );
-          scene.add( line );
-        }
+    //     for (var i = 0; i < 4; i++) {
+    //       var geometry = new THREE.Geometry();
+    //       for (var j = 0; j < 8; j++) {
+    //         geometry.vertices.push(new THREE.Vector3( bbox[i][j][2], -bbox[i][j][0], -bbox[i][j][1] ) );
+    //         if (j === 3) {
+    //           geometry.vertices.push(new THREE.Vector3( bbox[i][0][2], -bbox[i][0][0], -bbox[i][0][1] ) );
+    //         }
+    //         if (j === 7) {
+    //           geometry.vertices.push(new THREE.Vector3( bbox[i][4][2], -bbox[i][4][0], -bbox[i][4][1] ) );
+    //         }
+    //       }
+    //       var line = new THREE.Line( geometry, material );
+    //       scene.add( line );
+    //     }
         
-    });
+    // });
 
     var axesHelper = new THREE.AxesHelper( 5 );
     scene.add( axesHelper );
     
     // stats
-    
     stats = new Stats();
     this.mount.appendChild( stats.dom );
 
@@ -112,8 +139,6 @@ class App extends Component {
     window.addEventListener( 'resize', this.onWindowResize, false );
 
     window.addEventListener( 'keypress', this.onKeyPress );
-
-    this.animate();
   }
 
   animate = () => {
@@ -163,6 +188,17 @@ class App extends Component {
         break;
     }
   }
+
+  onFileSelect = (e) => {
+    console.log(e.target.id);
+    filename = e.target.id;
+    while (this.mount.firstChild) {
+      this.mount.removeChild(this.mount.firstChild);
+    }
+
+    this.init(filename);
+    this.animate();
+  }
   
   render() {
     return (
@@ -174,6 +210,18 @@ class App extends Component {
           <div>mouse wheel: Zooms up and down</div>
           <div>+/-: Increase/Decrease point size</div>
           <div>c: Change color</div>
+          <div>{this.state.loaded}% loaded</div>
+        </div>
+        <div id="filelist" className="row">
+          <div className="col">
+            <div>Frames</div>
+            <div className="list-group" id="list-tab" role="tablist">
+              <a className="list-group-item px-2 py-1 list-group-item-action active" id="store_100k" data-toggle="list" href="#list-1" onClick={this.onFileSelect}>store_100k.pcd</a>
+              <a className="list-group-item px-2 py-1 list-group-item-action" id="store_100k_object_rgb" data-toggle="list" href="#list-2" onClick={this.onFileSelect}>store_100k_object_rgb.pcd</a>
+              <a className="list-group-item px-2 py-1 list-group-item-action" id="store" data-toggle="list" href="#list-3" onClick={this.onFileSelect}>store.pcd</a>
+              <a className="list-group-item px-2 py-1 list-group-item-action" id="000015" data-toggle="list" href="#list-4" onClick={this.onFileSelect}>000015.pcd</a>
+            </div>
+          </div>
         </div>
         {/* <button className="btn btn-dark">BUTTON</button> */}
         <div
