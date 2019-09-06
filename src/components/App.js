@@ -9,7 +9,8 @@ import '../static/App.css';
 
 var camera, controls, scene, stats, renderer, loader;
 
-var filename = 'store_100k';
+var fileSelected = 'store_100k';
+var files = ['store_100k', 'store_100k_object_rgb', 'store', '000015'];
 
 class App extends Component {
   constructor(props) {
@@ -21,7 +22,7 @@ class App extends Component {
   }
 
   componentDidMount() {
-    this.init(filename);
+    this.init(fileSelected);
 
     this.animate();
   }
@@ -170,7 +171,7 @@ class App extends Component {
 
   onKeyPress = ( e ) => {
     console.log(e.keyCode);
-    var points = scene.getObjectByName( filename + '.pcd' );
+    var points = scene.getObjectByName( fileSelected + '.pcd' );
     switch ( e.keyCode ) {
       case 61:
         points.material.size *= 1.2;
@@ -191,19 +192,20 @@ class App extends Component {
 
   onFileSelect = (e) => {
     console.log(e.target.id);
-    filename = e.target.id;
+    fileSelected = e.target.id;
     while (this.mount.firstChild) {
       this.mount.removeChild(this.mount.firstChild);
     }
 
-    this.init(filename);
+    this.init(fileSelected);
     this.animate();
   }
   
   render() {
     return (
       <div>
-        <div id="info">
+        
+        <div id="info-mouse" className="d-none d-sm-block">
           <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener">Zexi Han</a></div>
           <div>left mouse button + move: Panning the map</div>
           <div>right mouse button + move: Rotating the view</div>
@@ -212,14 +214,37 @@ class App extends Component {
           <div>c: Change color</div>
           <div>{this.state.loaded}% loaded</div>
         </div>
-        <div id="filelist" className="row">
+        <div id="info-touch" className="d-sm-none">
+          <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener">Zexi Han</a></div>
+          <div>one finger: Panning the map</div>
+          <div>two fingers: Scale, rotate and panning the map</div>
+          <div>three fingers: Orbiting the map</div>
+          <div>{this.state.loaded}% loaded</div>
+        </div>
+        <div className="dropdown d-sm-none">
+          <button className="btn btn-dark dropdown-toggle" type="button" id="framesBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Frames
+          </button>
+          <div className="dropdown-menu d-sm-none" aria-labelledby="framesBtn">
+            {files.map((filename, i) =>
+              <a key={i} className="dropdown-item" id={filename} href="#" onClick={this.onFileSelect}>{filename}.pcd</a>
+            )}
+          </div>
+        </div>
+        <div id="filelist" className="row d-none d-sm-block">
           <div className="col">
             <div>Frames</div>
             <div className="list-group" id="list-tab" role="tablist">
-              <a className="list-group-item px-2 py-1 list-group-item-action active" id="store_100k" data-toggle="list" href="#list-1" onClick={this.onFileSelect}>store_100k.pcd</a>
-              <a className="list-group-item px-2 py-1 list-group-item-action" id="store_100k_object_rgb" data-toggle="list" href="#list-2" onClick={this.onFileSelect}>store_100k_object_rgb.pcd</a>
-              <a className="list-group-item px-2 py-1 list-group-item-action" id="store" data-toggle="list" href="#list-3" onClick={this.onFileSelect}>store.pcd</a>
-              <a className="list-group-item px-2 py-1 list-group-item-action" id="000015" data-toggle="list" href="#list-4" onClick={this.onFileSelect}>000015.pcd</a>
+              {files.map((filename, i) => 
+                <a key={i} 
+                   className={`list-group-item px-2 py-1 list-group-item-action ${filename === fileSelected ? 'active' : ''}`}
+                   id={filename} 
+                   data-toggle="list" 
+                   href={`#list-${filename}`} 
+                   onClick={this.onFileSelect}>
+                     {filename}.pcd
+                </a>
+              )}
             </div>
           </div>
         </div>
