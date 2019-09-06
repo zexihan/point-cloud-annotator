@@ -207,18 +207,17 @@ class App extends Component {
         
         <div id="info-mouse" className="d-none d-sm-block">
           <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener">Zexi Han</a></div>
-          <div>left mouse button + move: Panning the map</div>
-          <div>right mouse button + move: Rotating the view</div>
-          <div>mouse wheel: Zooms up and down</div>
+          <div>left mouse button + move: Pan the map</div>
+          <div>right mouse button + move: Rotate the view</div>
+          <div>mouse wheel: Zoom up and down</div>
           <div>+/-: Increase/Decrease point size</div>
           <div>c: Change color</div>
           <div>{this.state.loaded}% loaded</div>
         </div>
         <div id="info-touch" className="d-sm-none">
           <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener">Zexi Han</a></div>
-          <div>one finger: Panning the map</div>
-          <div>two fingers: Scale, rotate and panning the map</div>
-          <div>three fingers: Orbiting the map</div>
+          <div>one finger: Pan the map</div>
+          <div>two fingers: Scale and rotate the view</div>
           <div>{this.state.loaded}% loaded</div>
         </div>
         <div className="dropdown d-sm-none">
