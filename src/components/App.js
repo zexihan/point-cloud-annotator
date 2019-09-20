@@ -9,8 +9,14 @@ import '../static/App.css';
 
 var camera, controls, scene, stats, renderer, loader;
 
-var fileSelected = 'store_100k';
-var files = ['store_100k', 'store_100k_object_rgb', 'store', '000015'];
+var raycaster = new THREE.Raycaster();
+raycaster.params.Points.threshold = 0.04;
+var mouse = new THREE.Vector2();
+
+var fileSelected = '9441_nonbg';
+// var files = ['nonscene', '9341', '9441', '9541', '9641', '9741', '9841', '9941', '10041', '10141', '10241'];
+var files = ['9441_nonbg', '9541_nonbg', '9641_nonbg', '9741_nonbg', '9841_nonbg', '9941_nonbg', '10041_nonbg', '10141_nonbg', '10241_nonbg'];
+var bboxes = ['9341', '9541']
 
 class App extends Component {
   constructor(props) {
@@ -94,42 +100,43 @@ class App extends Component {
     } );
 
     // bbox
+    if (bboxes.includes(fileSelected)) {
+      fetch('./data/bbox/' + fileSelected + '.txt')
+      .then((res) => res.text())
+      .then(text => {
+        var lines = text.split(/\r\n|\n/);
+        lines = lines.map(line => { return line.split(' ') });
+        var bbox = {};
+        for (var i = 0; i < lines.length / 8; i++) {
+          bbox[i] = [];
+          for (var j = 0; j < 8; j++) {
+            bbox[i].push(lines[i * 8 + j].slice(1, 4).map(Number));
+          }
+        }
+        console.log(bbox);
+        console.log(bbox[0][0]);
 
-    // fetch('./data/bbox/' + filename + '.txt')
-    //   .then((res) => res.text())
-    //   .then(text => {
-    //     var lines = text.split(/\r\n|\n/);
-    //     lines = lines.map(line => { return line.split(' ') });
-    //     var bbox = {};
-    //     for (var i = 0; i < lines.length / 8; i++) {
-    //       bbox[i] = [];
-    //       for (var j = 0; j < 8; j++) {
-    //         bbox[i].push(lines[i * 8 + j].slice(1, 4).map(Number));
-    //       }
-    //     }
-    //     console.log(bbox);
-    //     console.log(bbox[0][0]);
-
-    //     var material = new THREE.LineBasicMaterial( { color: 0xff0000, linewidth: 2 } );
+        var material = new THREE.LineBasicMaterial( { color: 0xff0000, linewidth: 2 } );
         
-    //     for (var i = 0; i < 4; i++) {
-    //       var geometry = new THREE.Geometry();
-    //       for (var j = 0; j < 8; j++) {
-    //         geometry.vertices.push(new THREE.Vector3( bbox[i][j][2], -bbox[i][j][0], -bbox[i][j][1] ) );
-    //         if (j === 3) {
-    //           geometry.vertices.push(new THREE.Vector3( bbox[i][0][2], -bbox[i][0][0], -bbox[i][0][1] ) );
-    //         }
-    //         if (j === 7) {
-    //           geometry.vertices.push(new THREE.Vector3( bbox[i][4][2], -bbox[i][4][0], -bbox[i][4][1] ) );
-    //         }
-    //       }
-    //       var line = new THREE.Line( geometry, material );
-    //       scene.add( line );
-    //     }
-        
-    // });
+        for (var i = 0; i < 1; i++) {
+          var geometry = new THREE.Geometry();
+          for (var j = 0; j < 8; j++) {
+            geometry.vertices.push(new THREE.Vector3( bbox[i][j][2], -bbox[i][j][0], -bbox[i][j][1] ) );
+            if (j === 3) {
+              geometry.vertices.push(new THREE.Vector3( bbox[i][0][2], -bbox[i][0][0], -bbox[i][0][1] ) );
+            }
+            if (j === 7) {
+              geometry.vertices.push(new THREE.Vector3( bbox[i][4][2], -bbox[i][4][0], -bbox[i][4][1] ) );
+            }
+          }
+          var line = new THREE.Line( geometry, material );
+          scene.add( line );
+        } 
+      });
+    }
+    
 
-    var axesHelper = new THREE.AxesHelper( 5 );
+    var axesHelper = new THREE.AxesHelper( 10 );
     scene.add( axesHelper );
     
     // stats
@@ -140,6 +147,8 @@ class App extends Component {
     window.addEventListener( 'resize', this.onWindowResize, false );
 
     window.addEventListener( 'keypress', this.onKeyPress );
+
+    window.addEventListener( 'mousemove', this.onMouseMove, false );
   }
 
   animate = () => {
@@ -156,8 +165,30 @@ class App extends Component {
 
   renderScene = () => {
 
+    // update the picking ray with the camera and mouse position
+    // raycaster.setFromCamera( mouse, camera );
+
+    // calculate objects intersecting the picking ray
+    // var intersects = raycaster.intersectObjects( scene.children );
+    
+    // for ( var i = 0; i < intersects.length; i++ ) {
+
+    //   intersects[ i ].object.material.color.set( 0xff0000 );
+
+    // }
+
     renderer.render(scene, camera);
 
+  }
+
+  onMouseMove = ( event ) => {
+
+    // calculate mouse position in normalized device coordinates
+    // (-1 to +1) for both components
+  
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+  
   }
 
   onWindowResize = () => {
@@ -207,6 +238,7 @@ class App extends Component {
         
         <div id="info-mouse" className="d-none d-sm-block">
           <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener">Zexi Han</a></div>
+          <div>The X axis is red. The Y axis is green. The Z axis is blue.</div>
           <div>left mouse button + move: Pan the map</div>
           <div>right mouse button + move: Rotate the view</div>
           <div>mouse wheel: Zoom up and down</div>
