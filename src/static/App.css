@@ -43,6 +43,13 @@
   z-index: 1;
 }
 
+.list-group{
+  max-height: 200px;
+  margin-bottom: 10px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 button {
   position: absolute;
   display: block;
