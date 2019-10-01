@@ -43,8 +43,15 @@
   z-index: 1;
 }
 
-.list-group{
-  max-height: 200px;
+.list-group {
+  max-height: 400px;
+  margin-bottom: 10px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dropdown-menu {
+  max-height: 400px;
   margin-bottom: 10px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;

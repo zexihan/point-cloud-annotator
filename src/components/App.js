@@ -5,9 +5,13 @@ import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js';
 import { MapControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
+import $ from 'jquery'; 
+import { CSVLink } from 'react-csv';
+
 import '../static/App.css';
 
-var camera, controls, scene, stats, renderer, loader;
+var camera, controls, scene, stats, renderer, loader, pointcloud;
+var bboxHelperList = [];
 
 var raycaster = new THREE.Raycaster();
 raycaster.params.Points.threshold = 0.04;
@@ -18,8 +22,13 @@ function range(start, end) {
 }
 
 var fileSelected = '9342';
-var bboxes = ['nonscene_clean'];
-var files = range(9342, 10480);
+const bboxes = range(9342, 10480);
+const files = range(9342, 10480);
+
+const fileFolder = 'littlebg_d0.3_s0.02/';
+const bboxFolder = 'littlebg_d0.2_s0.01_result/';
+
+var validFrames = [];
 
 class App extends Component {
   constructor(props) {
@@ -31,22 +40,25 @@ class App extends Component {
   }
 
   componentDidMount() {
-    this.init(fileSelected);
+    this.init();
 
     this.animate();
   }
 
-  init = (filename) => {
+  init = () => {
+
+    $('.alert-success').hide();
 
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
     
     scene = new THREE.Scene();
-    scene.background = new THREE.Color( 0xcccccc );
+    scene.background = new THREE.Color( 0x808080 );
     
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( width, height );
+    renderer.dofAutofocus = true;
     this.mount.appendChild( renderer.domElement );
 
     camera = new THREE.PerspectiveCamera(
@@ -55,7 +67,7 @@ class App extends Component {
       1,
       1000
     );
-    camera.position.set(5, -5, 5);
+    camera.position.set(6, -5, 6);
     camera.up.set( 0, -1, 0 );
     //scene.add(camera);
     
@@ -75,60 +87,14 @@ class App extends Component {
     
     controls.maxPolarAngle = Math.PI / 2;
 
-    // world
-
-    loader = new PCDLoader();
-    loader.load( './data/pcd/littlebg_0.05/' + filename + '.pcd', 
-    ( points ) => {
-
-      if (points.material.color.r !== 1) {
-        points.material.color.setHex( 0x000000 );
-      }
-
-      points.material.size = 0.04;
-      
-      scene.add( points );
-      
-      var center = points.geometry.boundingSphere.center;
-      controls.target.set( center.x, center.y, center.z );
-      controls.update();
-    },
-    ( xhr ) => {
-      this.setState({
-        loaded: Math.round(xhr.loaded / xhr.total * 100)
-      });
-
-      console.log( ( this.state.loaded ) + '% loaded' );
-  
-    } );
+    // point cloud
+    this.addPointcloud();
 
     // bbox
-    if (bboxes.includes(fileSelected)) {
-      fetch('./data/bbox/' + fileSelected + '.txt')
-        .then((res) => res.text())
-        .then(text => {
-          var lines = text.split(/\r\n|\n/);
-          lines = lines.map(line => { return line.split(' ') });
-
-          var labels = {};
-          console.log(lines.length);
-          for (var i = 0; i < lines.length; i++) {
-            labels[i] = lines[i].slice(1, 7).map(Number);
-          }
-          console.log(labels);
-          
-          for (var i = 0; i < lines.length; i++) {
-            var bbox = new THREE.Box3();
-            // bbox.setFromCenterAndSize( new THREE.Vector3( labels[i][3], labels[i][4], labels[i][5] ), new THREE.Vector3( labels[i][1], labels[i][2], labels[i][0] ) );
-            bbox.set(new THREE.Vector3( labels[i][0], labels[i][1], labels[i][2] ), new THREE.Vector3( labels[i][3], labels[i][4], labels[i][5] ))
-            var bboxHelper = new THREE.Box3Helper( bbox, 0x00FF00 );
-            scene.add( bboxHelper );
-          }
-        })
-    }
+    this.addBbox();
     
     // axis
-    var axesHelper = new THREE.AxesHelper( 10 );
+    var axesHelper = new THREE.AxesHelper( 5 );
     scene.add( axesHelper );
     
     // stats
@@ -141,6 +107,75 @@ class App extends Component {
     window.addEventListener( 'keypress', this.onKeyPress );
 
     window.addEventListener( 'mousemove', this.onMouseMove, false );
+  }
+
+  addPointcloud = () => {
+    
+    pointcloud = new THREE.Points(new THREE.Geometry(), new THREE.Material());
+    loader = new PCDLoader();
+    loader.load( './data/pcd/' + fileFolder + fileSelected + '.pcd', 
+    ( points ) => {
+
+      pointcloud = points;
+
+      if (points.material.color.r !== 1) {
+        points.material.color.setHex( 0x000000 );
+      }
+
+      points.material.size = 0.02;
+      
+      scene.add( pointcloud );
+      
+      // var center = points.geometry.boundingSphere.center;
+      // controls.target.set( center.x, center.y, center.z );
+      // controls.update();
+    },
+    ( xhr ) => {
+      this.setState({
+        loaded: Math.round(xhr.loaded / xhr.total * 100)
+      });
+
+      console.log( ( this.state.loaded ) + '% loaded' );
+  
+    } );
+  }
+
+  addBbox = () => {
+    if (bboxes.includes(fileSelected)) {
+      fetch('./data/bbox/' + bboxFolder + fileSelected + '.txt')
+        .then((res) => res.text())
+        .then(text => {
+          var lines = text.split(/\r\n|\n/);
+          lines = lines.map(line => { return line.split(' ') });
+
+          var labels = {};
+          console.log(lines.length);
+          for (var i = 0; i < lines.length; i++) {
+            labels[i] = lines[i].slice(0, 6).map(Number);
+          }
+          console.log(labels);
+
+          for (var i = 0; i < lines.length; i++) {
+            var bbox = new THREE.Box3();
+            // bbox.setFromCenterAndSize( new THREE.Vector3( labels[i][3], labels[i][4], labels[i][5] ), new THREE.Vector3( labels[i][1], labels[i][2], labels[i][0] ) );
+            bbox.set(new THREE.Vector3( labels[i][0], labels[i][1], labels[i][2] ), new THREE.Vector3( labels[i][3], 0, labels[i][5] ))
+            var bboxHelper = new THREE.Box3Helper( bbox, 0x00FF00 );
+            bboxHelperList.push(bboxHelper);
+            scene.add( bboxHelper );
+          }
+          
+        })
+    }
+  }
+
+  removePointcloud = () => {
+    scene.remove( pointcloud );
+  }
+
+  removeBbox = () => {
+    for (var i = 0; i < bboxHelperList.length; i++) {
+      scene.remove( bboxHelperList[i] );
+    }
   }
 
   animate = () => {
@@ -212,14 +247,20 @@ class App extends Component {
         if (files.indexOf(fileSelected) + 1 < files.length) {
           fileSelected = files[files.indexOf(fileSelected) + 1]
           this.onFileNext();
+          $('.alert-success').hide();
         }
         break
       case 97:
         if (files.indexOf(fileSelected) - 1 > -1) {
           fileSelected = files[files.indexOf(fileSelected) - 1]
           this.onFilePrev();
+          $('.alert-success').hide();
         }
-        
+        break
+      case 102:
+        validFrames.push([fileSelected]);
+        console.log(validFrames);
+        $('.alert-success').show();
         break
       default:
         break;
@@ -227,31 +268,30 @@ class App extends Component {
   }
 
   onFileSelect = (e) => {
-    console.log(e.target.id);
     fileSelected = e.target.id;
     console.log(fileSelected);
-    while (this.mount.firstChild) {
-      this.mount.removeChild(this.mount.firstChild);
-    }
 
-    this.init(fileSelected);
-    this.animate();
+    this.removePointcloud();
+    this.removeBbox();
+
+    this.addPointcloud();
+    this.addBbox();
   }
 
   onFileNext = () => {
-    while (this.mount.firstChild) {
-      this.mount.removeChild(this.mount.firstChild);
-    }
-    this.init(fileSelected);
-    this.animate();
+    this.removePointcloud();
+    this.removeBbox();
+
+    this.addPointcloud();
+    this.addBbox();
   }
 
   onFilePrev = () => {
-    while (this.mount.firstChild) {
-      this.mount.removeChild(this.mount.firstChild);
-    }
-    this.init(fileSelected);
-    this.animate();
+    this.removePointcloud();
+    this.removeBbox();
+
+    this.addPointcloud();
+    this.addBbox();
   }
   
   render() {
@@ -259,15 +299,18 @@ class App extends Component {
       <div>
         
         <div id="info-mouse" className="d-none d-sm-block">
+
           <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener">Zexi Han</a></div>
-          <div>axis: <font style={{color:'red'}}>X</font>  <font style={{color:'green'}}>Y</font> <font style={{color:'blue'}}>Z</font></div>
+          <div>axis: <font style={{color:'red'}}>X</font>  <font style={{color:'lime'}}>Y</font> <font style={{color:'blue'}}>Z</font></div>
           <div>left mouse button + move: Pan the map</div>
           <div>right mouse button + move: Rotate the view</div>
           <div>mouse wheel: Zoom up and down</div>
           <div>a/d: Previous/Next frame</div>
           <div>+/-: Increase/Decrease point size</div>
           <div>c: Change color</div>
+          <div>f: Validate</div>
           {this.state.loaded !== 100 && <div>{this.state.loaded}% loaded</div>}
+
         </div>
         <div id="info-touch" className="d-sm-none">
           <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener">Zexi Han</a></div>
@@ -281,13 +324,17 @@ class App extends Component {
           </button>
           <div className="dropdown-menu d-sm-none" aria-labelledby="framesBtn">
             {files.map((filename, i) =>
-              <a key={i} className="dropdown-item" id={filename} href="#" onClick={this.onFileSelect}>{filename}.pcd</a>
+              <a key={i} className="dropdown-item" id={filename} href="#" onClick={this.onFileSelect}>{filename}</a>
             )}
           </div>
         </div>
         <div id="filelist" className="row d-none d-sm-block">
           <div className="col">
-            <div>Frames</div>
+            
+            <div class="alert alert-info">
+              <strong>Frames {fileSelected}</strong> 
+            </div>
+            
             <div className="list-group" id="list-tab" role="tablist">
               {files.map((filename, i) => 
                 <a key={i} 
@@ -296,10 +343,21 @@ class App extends Component {
                    data-toggle="list" 
                    href={`#list-${filename}`} 
                    onClick={this.onFileSelect}>
-                     {filename}.pcd
+                     {filename}
                 </a>
               )}
             </div>
+            <div class="alert alert-success" role="alert">
+              Success!
+            </div>
+            <CSVLink 
+              data={validFrames} 
+              enclosingCharacter=''
+              filename={"valid_frames.txt"}
+              className="btn btn-light">
+                Download labels
+            </CSVLink>
+            
           </div>
         </div>
         {/* <button className="btn btn-dark">BUTTON</button> */}
