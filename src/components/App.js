@@ -13,9 +13,9 @@ import '../static/App.css';
 var camera, controls, scene, stats, renderer, loader, pointcloud;
 var bboxHelperList = [];
 
-var raycaster = new THREE.Raycaster();
-raycaster.params.Points.threshold = 0.04;
-var mouse = new THREE.Vector2();
+// var raycaster = new THREE.Raycaster();
+// raycaster.params.Points.threshold = 0.04;
+// var mouse = new THREE.Vector2();
 
 function range(start, end) {
   return (new Array(end - start + 1)).fill(undefined).map((_, i) => (i + start).toString());
@@ -25,8 +25,8 @@ var fileSelected = '9342';
 const bboxes = range(9342, 10480);
 const files = range(9342, 10480);
 
-const fileFolder = 'littlebg_d0.3_s0.02/';
-const bboxFolder = 'littlebg_d0.2_s0.01_result/';
+const fileFolder = 'pointrcnn_velodyne/';
+const bboxFolder = 'pointrcnn_result/';
 
 var validFrames = [];
 
@@ -67,8 +67,8 @@ class App extends Component {
       1,
       1000
     );
-    camera.position.set(6, -5, 6);
-    camera.up.set( 0, -1, 0 );
+    camera.position.set(6, 6, 6);
+    camera.up.set( 0, 0, 1 );
     //scene.add(camera);
     
     // controls
@@ -106,7 +106,7 @@ class App extends Component {
 
     window.addEventListener( 'keypress', this.onKeyPress );
 
-    window.addEventListener( 'mousemove', this.onMouseMove, false );
+    // window.addEventListener( 'mousemove', this.onMouseMove, false );
   }
 
   addPointcloud = () => {
@@ -158,7 +158,7 @@ class App extends Component {
           for (var i = 0; i < lines.length; i++) {
             var bbox = new THREE.Box3();
             // bbox.setFromCenterAndSize( new THREE.Vector3( labels[i][3], labels[i][4], labels[i][5] ), new THREE.Vector3( labels[i][1], labels[i][2], labels[i][0] ) );
-            bbox.set(new THREE.Vector3( labels[i][0], labels[i][1], labels[i][2] ), new THREE.Vector3( labels[i][3], 0, labels[i][5] ))
+            bbox.set(new THREE.Vector3( labels[i][0], labels[i][1], labels[i][2] ), new THREE.Vector3( labels[i][3], labels[i][4], labels[i][5] ))
             var bboxHelper = new THREE.Box3Helper( bbox, 0x00FF00 );
             bboxHelperList.push(bboxHelper);
             scene.add( bboxHelper );
@@ -208,15 +208,15 @@ class App extends Component {
 
   }
 
-  onMouseMove = ( event ) => {
+  // onMouseMove = ( event ) => {
 
-    // calculate mouse position in normalized device coordinates
-    // (-1 to +1) for both components
+  //   // calculate mouse position in normalized device coordinates
+  //   // (-1 to +1) for both components
   
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+  //   mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+  //   mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
   
-  }
+  // }
 
   onWindowResize = () => {
     
