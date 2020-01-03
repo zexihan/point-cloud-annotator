@@ -43,6 +43,12 @@
   z-index: 1;
 }
 
+#matrices {
+  background-color: white;
+  border-radius: 5px;
+  font-size: 80%;
+}
+
 .list-group {
   max-height: 400px;
   margin-bottom: 10px;

@@ -21,21 +21,24 @@ function range(start, end) {
   return (new Array(end - start + 1)).fill(undefined).map((_, i) => (i + start).toString());
 }
 
-var fileSelected = '9342';
-const bboxes = range(9342, 10480);
-const files = range(9342, 10480);
+const files = range(9379, 10479);
+const bboxes = files;
+var fileSelected = files[0];
 
-const fileFolder = 'pointrcnn_velodyne/';
-const bboxFolder = 'pointrcnn_result/';
+var set_tag = 'user5_2';
+const fileFolder = './data/pcd/PC_RGB_SOR/' + set_tag;
+const bboxFolder = './data/bbox/PCL_DET_RES/' + set_tag;
 
-var validFrames = [];
+var markedFrames = [];
 
 class App extends Component {
   constructor(props) {
     super(props);
     
     this.state = {
-      loaded: 0
+      loaded: 0,
+      intrinsic: 0,
+      extrinsic: 0
     };
   }
 
@@ -67,9 +70,19 @@ class App extends Component {
       1,
       1000
     );
-    camera.position.set(6, 6, 6);
+    // camera = new THREE.OrthographicCamera( 5, -5, 3, 0, 1, 1000 );
+    camera.position.set(3,3,3);
     camera.up.set( 0, 0, 1 );
-    //scene.add(camera);
+    
+
+    this.setState({
+      intrinsic: this.cameraMatrix2npString(camera.projectionMatrix),
+      extrinsic: this.cameraMatrix2npString(camera.matrixWorldInverse)
+    });
+
+    console.log(this.cameraMatrix2npString(camera.projectionMatrix));
+    console.log(this.cameraMatrix2npString(camera.matrixWorldInverse));
+    // scene.add(camera);
     
     // controls
 
@@ -77,7 +90,7 @@ class App extends Component {
     
     //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
 
-    controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+    controls.enableDamping = false; // an animation loop is required when either damping or auto-rotation are enabled
     controls.dampingFactor = 0.05;
     
     controls.screenSpacePanning = false;
@@ -109,11 +122,31 @@ class App extends Component {
     // window.addEventListener( 'mousemove', this.onMouseMove, false );
   }
 
+  cameraMatrix2npString = ( cameraMatrix ) => {
+    var npString = "np.array([";
+    for (var i = 0; i < 4; i++) {
+      npString += "["
+      for (var j = 0; j < 4; j++) {
+        var pos = i * 4 + j;
+        npString += cameraMatrix.elements[pos] === 0 ? cameraMatrix.elements[pos] : cameraMatrix.elements[pos].toFixed(4);
+        if (j !== 3) {
+          npString += ", ";
+        }
+      }
+      npString += "]";
+      if (i !== 3) {
+        npString += ", ";
+      }
+    }
+    npString += "])";
+    return npString;
+  }
+
   addPointcloud = () => {
     
     pointcloud = new THREE.Points(new THREE.Geometry(), new THREE.Material());
     loader = new PCDLoader();
-    loader.load( './data/pcd/' + fileFolder + fileSelected + '.pcd', 
+    loader.load(fileFolder + '/' + fileSelected + '.pcd', 
     ( points ) => {
 
       pointcloud = points;
@@ -122,7 +155,7 @@ class App extends Component {
         points.material.color.setHex( 0x000000 );
       }
 
-      points.material.size = 0.02;
+      points.material.size = 0.04;
       
       scene.add( pointcloud );
       
@@ -142,7 +175,7 @@ class App extends Component {
 
   addBbox = () => {
     if (bboxes.includes(fileSelected)) {
-      fetch('./data/bbox/' + bboxFolder + fileSelected + '.txt')
+      fetch(bboxFolder + '/' + fileSelected + '.txt')
         .then((res) => res.text())
         .then(text => {
           var lines = text.split(/\r\n|\n/);
@@ -153,7 +186,7 @@ class App extends Component {
           for (var i = 0; i < lines.length; i++) {
             labels[i] = lines[i].slice(0, 6).map(Number);
           }
-          console.log(labels);
+          // console.log(labels);
 
           for (var i = 0; i < lines.length; i++) {
             var bbox = new THREE.Box3();
@@ -179,6 +212,13 @@ class App extends Component {
   }
 
   animate = () => {
+
+    // console.log(camera.position.clone());
+
+    this.setState({
+      intrinsic: this.cameraMatrix2npString(camera.projectionMatrix),
+      extrinsic: this.cameraMatrix2npString(camera.matrixWorldInverse)
+    });
     
     requestAnimationFrame( this.animate );
 
@@ -222,7 +262,6 @@ class App extends Component {
     
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-   
     renderer.setSize( window.innerWidth, window.innerHeight );
 
   }
@@ -247,20 +286,53 @@ class App extends Component {
         if (files.indexOf(fileSelected) + 1 < files.length) {
           fileSelected = files[files.indexOf(fileSelected) + 1]
           this.onFileNext();
-          $('.alert-success').hide();
+
+          var flag = false;
+          for (const markedFrame of markedFrames) {
+              if (markedFrame[0] === fileSelected)
+                  flag = true;
+          }
+          if (flag) {
+            $('.alert-success').show();
+          } else {
+            $('.alert-success').hide();
+          }
         }
         break
       case 97:
         if (files.indexOf(fileSelected) - 1 > -1) {
           fileSelected = files[files.indexOf(fileSelected) - 1]
           this.onFilePrev();
-          $('.alert-success').hide();
+
+          var flag = false;
+          for (const markedFrame of markedFrames) {
+              if (markedFrame[0] === fileSelected)
+                  flag = true;
+          }
+          if (flag) {
+            $('.alert-success').show();
+          } else {
+            $('.alert-success').hide();
+          }
         }
         break
       case 102:
-        validFrames.push([fileSelected]);
-        console.log(validFrames);
-        $('.alert-success').show();
+        var idx = -1;
+        for (var i = 0; i < markedFrames.length; i++) {
+            if (markedFrames[i][0] === fileSelected)
+                idx = i;
+        }
+        if (idx === -1) {
+          markedFrames.push([fileSelected]);
+          console.log(fileSelected + " added!")
+          console.log(markedFrames);
+          $('.alert-success').show();
+        } else {
+          markedFrames.splice(idx, 1);
+          console.log(fileSelected + " removed!")
+          console.log(markedFrames);
+          $('.alert-success').hide();
+        }
         break
       default:
         break;
@@ -308,7 +380,7 @@ class App extends Component {
           <div>a/d: Previous/Next frame</div>
           <div>+/-: Increase/Decrease point size</div>
           <div>c: Change color</div>
-          <div>f: Validate</div>
+          <div>f: Mark</div>
           {this.state.loaded !== 100 && <div>{this.state.loaded}% loaded</div>}
 
         </div>
@@ -332,7 +404,7 @@ class App extends Component {
           <div className="col">
             
             <div class="alert alert-info">
-              <strong>Frames {fileSelected}</strong> 
+              <strong>{set_tag} {fileSelected}</strong> 
             </div>
             
             <div className="list-group" id="list-tab" role="tablist">
@@ -347,17 +419,24 @@ class App extends Component {
                 </a>
               )}
             </div>
+
+            {/* <div class="my-2 p-2 d-none d-sm-block" id="matrices">
+              <div>{"Mint = " + this.state.intrinsic}</div>
+              <br />
+              <div>{"Mext = " + this.state.extrinsic}</div>
+            </div> */}
+            
             <div class="alert alert-success" role="alert">
-              Success!
+              Marked!
             </div>
             <CSVLink 
-              data={validFrames} 
-              enclosingCharacter=''
-              filename={"valid_frames.txt"}
+              data={markedFrames} 
+              enclosingCharacter={``}
+              filename={"marked_frames_"+ set_tag + ".txt"}
               className="btn btn-light">
-                Download labels
+                Download marks
             </CSVLink>
-            
+
           </div>
         </div>
         {/* <button className="btn btn-dark">BUTTON</button> */}
