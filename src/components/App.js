@@ -21,13 +21,13 @@ function range(start, end) {
   return (new Array(end - start + 1)).fill(undefined).map((_, i) => (i + start).toString());
 }
 
-const files = range(9379, 10479);
+const files = range(9998, 9999); // 0 5 10 20
 const bboxes = files;
-var fileSelected = files[0];
-
-var set_tag = 'user5_2';
-const fileFolder = './data/pcd/PC_RGB_SOR/' + set_tag;
-const bboxFolder = './data/bbox/PCL_DET_RES/' + set_tag;
+var fileSelected = '2000';
+const fileFolder = './data/pcd/fusion/';
+var set_tag = 'user4_1';
+// const fileFolder = './data/pcd/PC_RGB_SOR/' + set_tag;
+const bboxFolder = './data/bbox/CORNER_LABELS/' + set_tag;
 
 var markedFrames = [];
 
@@ -56,7 +56,7 @@ class App extends Component {
     const height = this.mount.clientHeight;
     
     scene = new THREE.Scene();
-    scene.background = new THREE.Color( 0x808080 );
+    scene.background = new THREE.Color( 0x008000 );
     
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio( window.devicePixelRatio );
@@ -155,7 +155,7 @@ class App extends Component {
         points.material.color.setHex( 0x000000 );
       }
 
-      points.material.size = 0.04;
+      points.material.size = 0.02;
       
       scene.add( pointcloud );
       
