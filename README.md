@@ -1,6 +1,6 @@
 # Point Cloud Annotator (in dev)
 
-A web based annotation tool for 3D computer vision tasks. The tool is developed in the context of cashier-less convenience store research. It support point clouds (.pcd) for the annotation task of **pose estimation**, **tracking**, and **reID**. It is a SPA developed with [React](http://reactjs.org) and [three.js](https://threejs.org/).
+A web based annotation tool for 3D computer vision tasks. The tool is developed in the context of cashier-less convenience store research by Suning. It supports point clouds (.pcd) for the annotation task of **pose estimation**, **tracking**, and **reID**. It is a SPA developed with [React](http://reactjs.org) and [three.js](https://threejs.org/).
 
 <img align="center" src="https://github.com/zexihan/point-cloud-annotator/blob/master/extra/Capture1.png">
 
