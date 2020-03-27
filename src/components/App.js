@@ -18,6 +18,8 @@ raycaster.params.Points.threshold = 0.01;
 var mouse = new THREE.Vector2();
 
 var pointclouds;
+var keypoints = {};
+var kp_id = 0;
 
 var clock = new THREE.Clock();
 var toggle = 0;
@@ -31,11 +33,11 @@ function range(start, end) {
   return (new Array(end - start + 1)).fill(undefined).map((_, i) => (i + start).toString());
 }
 
-const files = range(2000, 2006);
+const files = range(0, 6);
 // const bboxes = files;
-var fileSelected = '2006';
+var fileSelected = '0';
 
-var set_nm = 'fusion';
+var set_nm = 'person';
 const fileFolder = './data/pcd/' + set_nm;
 // const bboxFolder = './data/bbox/CORNER_LABELS/' + set_nm;
 
@@ -71,7 +73,7 @@ class App extends Component {
     
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( width, height );
+    renderer.setSize(width, height);
     renderer.dofAutofocus = true;
     this.mount.appendChild( renderer.domElement );
 
@@ -82,7 +84,7 @@ class App extends Component {
       1000
     );
     // camera = new THREE.OrthographicCamera( 5, -5, 3, 0, 1, 1000 );
-    camera.position.set(3, 3, 3);
+    camera.position.set(2, 2, 2);
     camera.up.set( 0, 0, 1 );
     
 
@@ -91,8 +93,8 @@ class App extends Component {
       extrinsic: this.cameraMatrix2npString(camera.matrixWorldInverse)
     });
 
-    console.log(this.cameraMatrix2npString(camera.projectionMatrix));
-    console.log(this.cameraMatrix2npString(camera.matrixWorldInverse));
+    // console.log(this.cameraMatrix2npString(camera.projectionMatrix));
+    // console.log(this.cameraMatrix2npString(camera.matrixWorldInverse));
     // scene.add(camera);
     
     // controls
@@ -133,6 +135,8 @@ class App extends Component {
     window.addEventListener( 'keypress', this.onKeyPress );
 
     window.addEventListener( 'mousemove', this.onMouseMove, false );
+
+    window.addEventListener("click", this.onMouseClick, false);
   }
 
   cameraMatrix2npString = ( cameraMatrix ) => {
@@ -220,11 +224,11 @@ class App extends Component {
     scene.remove( pointcloud );
   }
 
-  removeBbox = () => {
-    for (var i = 0; i < bboxHelperList.length; i++) {
-      scene.remove( bboxHelperList[i] );
-    }
-  }
+  // removeBbox = () => {
+  //   for (var i = 0; i < bboxHelperList.length; i++) {
+  //     scene.remove( bboxHelperList[i] );
+  //   }
+  // }
 
   animate = () => {
 
@@ -281,11 +285,24 @@ class App extends Component {
   
   }
 
+  onMouseClick = (event) => {
+    if (event.shiftKey) {
+      if (fileSelected in keypoints === false) {
+        keypoints[fileSelected] = {};
+        keypoints[fileSelected][kp_id] = this.state.point;
+      } else {
+        keypoints[fileSelected][kp_id] = this.state.point;
+      }
+      kp_id += 1;
+      console.log(keypoints);
+
+    }
+  }
+
   onWindowResize = () => {
-    
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = 0.8 * window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize( 0.8 * window.innerWidth, window.innerHeight );
 
   }
 
@@ -293,71 +310,72 @@ class App extends Component {
     console.log(e.keyCode);
     var points = scene.getObjectByName( fileSelected + '.pcd' );
     var flag;
-    switch ( e.keyCode ) {
-      case 61:
+    switch (e.keyCode) {
+      case 61: // +
         points.material.size *= 1.2;
         points.material.needsUpdate = true;
         break;
-      case 45:
+      case 45: // -
         points.material.size /= 1.2;
         points.material.needsUpdate = true;
         break;
-      case 99:
-        points.material.color.setHex( Math.random() * 0xffffff );
+      case 99: // c
+        points.material.color.setHex(Math.random() * 0xffffff);
         points.material.needsUpdate = true;
         break;
-      case 100:
+      case 100: // d
         if (files.indexOf(fileSelected) + 1 < files.length) {
-          fileSelected = files[files.indexOf(fileSelected) + 1]
+          fileSelected = files[files.indexOf(fileSelected) + 1];
           this.onFileNext();
 
           flag = false;
           for (const markedFrame of markedFrames) {
-              if (markedFrame[0] === fileSelected)
-                  flag = true;
+            if (markedFrame[0] === fileSelected) flag = true;
           }
           if (flag) {
-            $('.alert-success').show();
+            $(".alert-success").show();
           } else {
-            $('.alert-success').hide();
+            $(".alert-success").hide();
           }
+
+          kp_id = 0; 
         }
-        break
-      case 97:
+        break;
+      case 97: // a
         if (files.indexOf(fileSelected) - 1 > -1) {
-          fileSelected = files[files.indexOf(fileSelected) - 1]
+          fileSelected = files[files.indexOf(fileSelected) - 1];
           this.onFilePrev();
 
           flag = false;
           for (const markedFrame of markedFrames) {
-              if (markedFrame[0] === fileSelected)
-                  flag = true;
+            if (markedFrame[0] === fileSelected) flag = true;
           }
           if (flag) {
-            $('.alert-success').show();
+            $(".alert-success").show();
           } else {
-            $('.alert-success').hide();
+            $(".alert-success").hide();
           }
+
+          kp_id = 0;
         }
-        break
-      case 102:
+        break;
+      case 102: // f
         var idx = -1;
         for (var i = 0; i < markedFrames.length; i++) {
-            if (markedFrames[i][0] === fileSelected)
-                idx = i;
+          if (markedFrames[i][0] === fileSelected) idx = i;
         }
         if (idx === -1) {
           markedFrames.push([fileSelected]);
-          console.log(fileSelected + " added!")
+          console.log(fileSelected + " added!");
           console.log(markedFrames);
-          $('.alert-success').show();
+          $(".alert-success").show();
         } else {
           markedFrames.splice(idx, 1);
-          console.log(fileSelected + " removed!")
+          console.log(fileSelected + " removed!");
           console.log(markedFrames);
-          $('.alert-success').hide();
+          $(".alert-success").hide();
         }
-        break
+        break;
       default:
         break;
     }
@@ -393,7 +411,6 @@ class App extends Component {
   render() {
     return (
       <div>
-        
         {/* <div id="info-mouse" className="d-none d-sm-block">
 
           <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener noreferrer">Zexi Han</a></div>
@@ -424,14 +441,38 @@ class App extends Component {
             )}
           </div>
         </div> */}
-        <div id="filelist" className="row d-none d-sm-block">
+        <div
+          style={{
+            width: 0.8 * window.innerWidth,
+            height: window.innerHeight
+          }}
+          ref={mount => {
+            this.mount = mount;
+          }}
+        />
+        <div
+          id="filelist"
+          className="row d-none d-sm-block"
+        >
           <div className="col">
             <h3>Point Cloud Viewer</h3>
             <div>Suning Commerce R&D Center USA</div>
             <div>Applied AI Lab</div>
-            <div><a href="https://zexihan.com" target="_blank" rel="noopener noreferrer">Zexi Han</a></div>
+            <div>
+              <a
+                href="https://zexihan.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Zexi Han
+              </a>
+            </div>
             <br />
-            <div>axis: <font style={{ color: 'red' }}>X</font>  <font style={{ color: 'lime' }}>Y</font> <font style={{ color: 'blue' }}>Z</font></div>
+            <div>
+              axis: <font style={{ color: "red" }}>X</font>{" "}
+              <font style={{ color: "lime" }}>Y</font>{" "}
+              <font style={{ color: "blue" }}>Z</font>
+            </div>
             <div>left mouse button + move: Pan the map</div>
             <div>right mouse button + move: Rotate the view</div>
             <div>mouse wheel: Zoom up and down</div>
@@ -439,23 +480,31 @@ class App extends Component {
             <div>+/-: Increase/Decrease point size</div>
             <div>c: Change color</div>
             <div>f: Mark</div>
-            {this.state.loaded !== 100 && <div>{this.state.loaded}% loaded</div>}
+            {this.state.loaded !== 100 && (
+              <div>{this.state.loaded}% loaded</div>
+            )}
             <br />
             <div className="alert alert-info">
-              <strong>{set_nm} {fileSelected}</strong> 
+              <strong>
+                {set_nm} {fileSelected}
+              </strong>
             </div>
-            
+
             <div className="list-group" id="list-tab" role="tablist">
-              {files.map((filename, i) => 
-                <a key={i} 
-                   className={`list-group-item px-2 py-1 list-group-item-action ${filename === fileSelected ? 'active' : ''}`}
-                   id={filename} 
-                   data-toggle="list" 
-                   href={`#list-${filename}`} 
-                   onClick={this.onFileSelect}>
-                     {filename}
+              {files.map((filename, i) => (
+                <a
+                  key={i}
+                  className={`list-group-item px-2 py-1 list-group-item-action ${
+                    filename === fileSelected ? "active" : ""
+                  }`}
+                  id={filename}
+                  data-toggle="list"
+                  href={`#list-${filename}`}
+                  onClick={this.onFileSelect}
+                >
+                  {filename}
                 </a>
-              )}
+              ))}
             </div>
 
             {/* <div className="my-2 p-2 d-none d-sm-block" id="matrices">
@@ -463,33 +512,30 @@ class App extends Component {
               <br />
               <div>{"Mext = " + this.state.extrinsic}</div>
             </div> */}
-            
+
             <div className="alert alert-success" role="alert">
               Marked!
             </div>
-            <CSVLink 
-              data={markedFrames} 
+            <CSVLink
+              data={markedFrames}
               enclosingCharacter={``}
-              filename={"marked_frames_"+ set_nm + ".txt"}
-              className="btn btn-light">
-                Download marks
+              filename={"marked_frames_" + set_nm + ".txt"}
+              className="btn btn-light"
+            >
+              Download marks
             </CSVLink>
             <div>
-              <p>x: {this.state.point.x ? this.state.point.x.toFixed(4) : 0}&nbsp;
-                 y: {this.state.point.y ? this.state.point.y.toFixed(4) : 0}&nbsp;
-                 z: {this.state.point.z ? this.state.point.z.toFixed(4) : 0}</p>
+              <p>
+                x: {this.state.point.x ? this.state.point.x.toFixed(4) : 0}
+                &nbsp; y:{" "}
+                {this.state.point.y ? this.state.point.y.toFixed(4) : 0}&nbsp;
+                z: {this.state.point.z ? this.state.point.z.toFixed(4) : 0}
+              </p>
             </div>
-
           </div>
         </div>
         {/* <button className="btn btn-dark">BUTTON</button> */}
-        <div
-          style={{ width: 0.8 * window.innerWidth, height: window.innerHeight }}
-          ref={(mount) => { this.mount = mount }}
-        />
-        
       </div>
-      
     );
   }
 }
