@@ -9,9 +9,10 @@ import $ from 'jquery';
 import { CSVLink } from 'react-csv';
 
 import '../static/App.css';
+import configs from "./configs.json";
 
 var camera, controls, scene, stats, renderer, loader, pointcloud;
-var bboxHelperList = [];
+// var bboxHelperList = [];
 
 var raycaster = new THREE.Raycaster();
 raycaster.params.Points.threshold = 0.01;
@@ -37,9 +38,8 @@ const files = range(0, 6);
 // const bboxes = files;
 var fileSelected = '0';
 
-var set_nm = 'person';
-const fileFolder = './data/pcd/' + set_nm;
-// const bboxFolder = './data/bbox/CORNER_LABELS/' + set_nm;
+const fileFolder = configs["pcd-folder"] + "/" + configs["set_nm"];
+// const bboxFolder = settings["configs"]["bbox-folder"] + "/" + set_nm;
 
 var markedFrames = [];
 
@@ -48,6 +48,7 @@ class App extends Component {
     super(props);
     
     this.state = {
+      
       loaded: 0,
       intrinsic: 0,
       extrinsic: 0,
@@ -386,7 +387,7 @@ class App extends Component {
     console.log(fileSelected);
 
     this.removePointcloud();
-    this.removeBbox();
+    // this.removeBbox();
 
     this.addPointcloud();
     // this.addBbox();
@@ -394,7 +395,7 @@ class App extends Component {
 
   onFileNext = () => {
     this.removePointcloud();
-    this.removeBbox();
+    // this.removeBbox();
 
     this.addPointcloud();
     // this.addBbox();
@@ -402,7 +403,7 @@ class App extends Component {
 
   onFilePrev = () => {
     this.removePointcloud();
-    this.removeBbox();
+    // this.removeBbox();
 
     this.addPointcloud();
     // this.addBbox();
@@ -450,10 +451,7 @@ class App extends Component {
             this.mount = mount;
           }}
         />
-        <div
-          id="filelist"
-          className="row d-none d-sm-block"
-        >
+        <div id="filelist" className="row d-none d-sm-block">
           <div className="col">
             <h3>Point Cloud Viewer</h3>
             <div>Suning Commerce R&D Center USA</div>
@@ -486,7 +484,7 @@ class App extends Component {
             <br />
             <div className="alert alert-info">
               <strong>
-                {set_nm} {fileSelected}
+                {configs["set_nm"]} {fileSelected}
               </strong>
             </div>
 
@@ -519,7 +517,13 @@ class App extends Component {
             <CSVLink
               data={markedFrames}
               enclosingCharacter={``}
-              filename={"marked_frames_" + set_nm + ".txt"}
+              filename={
+                configs["mark-folder"] +
+                "/" +
+                "marks_" +
+                configs["set_nm"] +
+                ".txt"
+              }
               className="btn btn-light"
             >
               Download marks

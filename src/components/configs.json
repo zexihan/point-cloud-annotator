@@ -1,0 +1,17 @@
+{
+    "set_nm": "person",
+    "begin_fid": 0,
+    "end_fid": 6,
+    "pcd-folder": "./data/pcd",
+    "bbox-folder": "./data/bbox",
+    "mark-folder": "./data/mark",
+    "key-points-folder": "./data/keypoints",
+    "key-points": [
+        {"label": "", "color": ""},
+        {"label": "", "color": ""},
+        {"label": "", "color": ""},
+        {"label": "", "color": ""},
+        {"label": "", "color": ""}
+    ]
+}
+
