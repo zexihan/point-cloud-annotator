@@ -6,8 +6,10 @@
     "bootstrap": "^4.4.1",
     "jquery": "^3.4.1",
     "react": "^16.13.1",
+    "react-copy-to-clipboard": "^5.0.2",
     "react-csv": "^2.0.1",
     "react-dom": "^16.13.1",
+    "react-router-dom": "^5.1.2",
     "react-scripts": "^3.4.1",
     "three": "^0.115.0"
   },
