@@ -284,8 +284,9 @@ class App extends Component {
     // calculate mouse position in normalized device coordinates
     // (-1 to +1) for both components
     event.preventDefault();
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    mouse.x = (event.clientX / this.mount.clientWidth ) * 2 - 1;
+    mouse.y = - ((event.clientY - 0.1 * window.innerHeight) / this.mount.clientHeight ) * 2 + 1;
+    console.log()
   }
 
   onMouseClick = (event) => {
@@ -298,7 +299,6 @@ class App extends Component {
       }
       kp_id += 1;
       console.log(keypoints);
-
     }
   }
 
