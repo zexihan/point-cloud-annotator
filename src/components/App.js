@@ -34,7 +34,7 @@ function range(start, end) {
   return (new Array(end - start + 1)).fill(undefined).map((_, i) => (i + start).toString());
 }
 
-const files = range(0, 6);
+const files = range(configs["begin_fid"], configs["end_fid"]);
 // const bboxes = files;
 var fileSelected = '0';
 
@@ -66,8 +66,8 @@ class App extends Component {
 
     $('.alert-success').hide();
 
-    const width = this.mount.clientWidth;
-    const height = this.mount.clientHeight;
+    const width = 0.75 * window.innerWidth;
+    const height = 0.85 * window.innerHeight;
     
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0x008000 );
@@ -77,6 +77,9 @@ class App extends Component {
     renderer.setSize(width, height);
     renderer.dofAutofocus = true;
     this.mount.appendChild( renderer.domElement );
+    
+    console.log(this.mount.clientWidth);
+    console.log(window.innerWidth);
 
     camera = new THREE.PerspectiveCamera(
       65,
@@ -126,7 +129,7 @@ class App extends Component {
     
     // stats
     stats = new Stats();
-    this.mount.appendChild( stats.dom );
+    // this.mount.appendChild( stats.dom );
 
     // sphere
     scene.add(sphere);
@@ -281,9 +284,8 @@ class App extends Component {
     // calculate mouse position in normalized device coordinates
     // (-1 to +1) for both components
     event.preventDefault();
-    mouse.x = ( event.clientX / (0.8 * window.innerWidth) ) * 2 - 1;
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
     mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-  
   }
 
   onMouseClick = (event) => {
@@ -301,9 +303,9 @@ class App extends Component {
   }
 
   onWindowResize = () => {
-    camera.aspect = 0.8 * window.innerWidth / window.innerHeight;
+    camera.aspect = (0.75 * window.innerWidth) / (0.85 * window.innerHeight);
     camera.updateProjectionMatrix();
-    renderer.setSize( 0.8 * window.innerWidth, window.innerHeight );
+    renderer.setSize( 0.75 * window.innerWidth, 0.85 * window.innerHeight );
 
   }
 
@@ -411,49 +413,10 @@ class App extends Component {
   
   render() {
     return (
-      <div>
-        {/* <div id="info-mouse" className="d-none d-sm-block">
-
-          <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener noreferrer">Zexi Han</a></div>
-          <div>axis: <font style={{color:'red'}}>X</font>  <font style={{color:'lime'}}>Y</font> <font style={{color:'blue'}}>Z</font></div>
-          <div>left mouse button + move: Pan the map</div>
-          <div>right mouse button + move: Rotate the view</div>
-          <div>mouse wheel: Zoom up and down</div>
-          <div>a/d: Previous/Next frame</div>
-          <div>+/-: Increase/Decrease point size</div>
-          <div>c: Change color</div>
-          <div>f: Mark</div>
-          {this.state.loaded !== 100 && <div>{this.state.loaded}% loaded</div>}
-
-        </div> */}
-        {/* <div id="info-touch" className="d-sm-none">
-          <div>Point Cloud Viewer by <a href="https://zexihan.com" target="_blank" rel="noopener noreferrer">Zexi Han</a></div>
-          <div>one finger: Pan the map</div>
-          <div>two fingers: Scale and rotate the view</div>
-          <div>{this.state.loaded}% loaded</div>
-        </div>
-        <div className="dropdown d-sm-none">
-          <button className="btn btn-dark dropdown-toggle" type="button" id="framesBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Frames
-          </button>
-          <div className="dropdown-menu d-sm-none" aria-labelledby="framesBtn">
-            {files.map((filename, i) =>
-              <button key={i} className="dropdown-item" id={filename} onClick={this.onFileSelect}>{filename}</button>
-            )}
-          </div>
-        </div> */}
-        <div
-          style={{
-            width: 0.8 * window.innerWidth,
-            height: window.innerHeight
-          }}
-          ref={mount => {
-            this.mount = mount;
-          }}
-        />
-        <div id="filelist" className="row d-none d-sm-block">
+      <div className="contain-fluid">
+        <div id="top" className="row p-2" style={{ height: 0.1 * window.innerHeight}}>
           <div className="col">
-            <h3>Point Cloud Viewer</h3>
+            <div><b>Point Cloud Annotator</b></div>
             <div>Suning Commerce R&D Center USA</div>
             <div>Applied AI Lab</div>
             <div>
@@ -465,36 +428,59 @@ class App extends Component {
                 Zexi Han
               </a>
             </div>
-            <br />
-            <div>
-              axis: <font style={{ color: "red" }}>X</font>{" "}
-              <font style={{ color: "lime" }}>Y</font>{" "}
-              <font style={{ color: "blue" }}>Z</font>
+          </div>
+          <div className="col">
+            
+          </div>
+          <div className="col">
+
+          </div>
+          <div className="col">
+            <div className="row mr-1 justify-content-end">
+              <CSVLink
+                className="btn btn-dark"
+                data={markedFrames}
+                enclosingCharacter={``}
+                filename={
+                  configs["mark-folder"] +
+                  "/" +
+                  "marks_" +
+                  configs["set_nm"] +
+                  ".txt"
+                }
+              >
+                Download marks
+              </CSVLink>
+            </div> 
+            <div className="row my-2 mr-1 justify-content-end ">
+              <button className="btn btn-dark">
+                Download keypoints
+              </button>
             </div>
-            <div>left mouse button + move: Pan the map</div>
-            <div>right mouse button + move: Rotate the view</div>
-            <div>mouse wheel: Zoom up and down</div>
-            <div>a/d: Previous/Next frame</div>
-            <div>+/-: Increase/Decrease point size</div>
-            <div>c: Change color</div>
-            <div>f: Mark</div>
-            {this.state.loaded !== 100 && (
-              <div>{this.state.loaded}% loaded</div>
-            )}
-            <br />
-            <div className="alert alert-info">
+          </div>
+        </div>
+        <div className="row">
+          <div
+            id="center" 
+            className="col"
+            style={{ width: 0.75 * window.innerWidth, height: 0.85 * window.innerHeight }}
+            ref={mount => {
+              this.mount = mount;
+            }}
+          />
+          <div id="right" className="col" style={{ width: 0.25 * window.innerWidth, height: 0.85 * window.innerHeight }}>
+            <div className="row m-2 alert alert-info">
               <strong>
                 {configs["set_nm"]} {fileSelected}
               </strong>
             </div>
-
-            <div className="list-group" id="list-tab" role="tablist">
+            <div className="row m-2 list-group" id="list-tab" role="tablist">
               {files.map((filename, i) => (
                 <a
                   key={i}
                   className={`list-group-item px-2 py-1 list-group-item-action ${
                     filename === fileSelected ? "active" : ""
-                  }`}
+                    }`}
                   id={filename}
                   data-toggle="list"
                   href={`#list-${filename}`}
@@ -504,44 +490,43 @@ class App extends Component {
                 </a>
               ))}
             </div>
-
-            {/* <div className="my-2 p-2 d-none d-sm-block" id="matrices">
-              <div>{"Mint = " + this.state.intrinsic}</div>
-              <br />
-              <div>{"Mext = " + this.state.extrinsic}</div>
-            </div> */}
-
-            <div className="alert alert-success" role="alert">
+            <div className="row m-2">
+              {
+                this.state.loaded !== 100 && (
+                  <div>{this.state.loaded}% loaded</div>
+                )
+              }
+            </div>
+            <div className="row m-2 alert alert-success" role="alert">
               Marked!
             </div>
-            <CSVLink
-              data={markedFrames}
-              enclosingCharacter={``}
-              filename={
-                configs["mark-folder"] +
-                "/" +
-                "marks_" +
-                configs["set_nm"] +
-                ".txt"
-              }
-              className="btn btn-light"
-            >
-              Download marks
-            </CSVLink>
-            <div>
-              <p>
-                x: {this.state.point.x ? this.state.point.x.toFixed(4) : 0}
-                &nbsp; y:{" "}
-                {this.state.point.y ? this.state.point.y.toFixed(4) : 0}&nbsp;
-                z: {this.state.point.z ? this.state.point.z.toFixed(4) : 0}
-              </p>
-            </div>
+            
+            
           </div>
         </div>
-        {/* <button className="btn btn-dark">BUTTON</button> */}
+        
+        
+        <div id="bottom" className="row p-2" style={{ height: 0.05 * window.innerHeight }}>
+          <div className="col">
+            <p>
+              x: {this.state.point.x ? this.state.point.x.toFixed(4) : 0}
+              &nbsp; y:{" "}
+              {this.state.point.y ? this.state.point.y.toFixed(4) : 0}&nbsp;
+              z: {this.state.point.z ? this.state.point.z.toFixed(4) : 0}
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 }
 
 export default App;
+
+
+
+//   <div className="my-2 p-2" id="matrices">
+//     <div>{"Mint = " + this.state.intrinsic}</div>
+//     <br />
+//     <div>{"Mext = " + this.state.extrinsic}</div>
+//   </div>

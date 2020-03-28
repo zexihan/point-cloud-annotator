@@ -1,50 +1,48 @@
-#info-mouse {
-  position: absolute;
-  top: 0px;
-  width: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-  text-align: center;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  pointer-events: none;
+html, body {
+  overflow: hidden;
+}
+
+a, a:hover {
+  color: #BB86FC;
+}
+
+.alert-info {
+  background-color: #2A2A2A;
+  color: #E2E2E2;
+  border-style: none;
+}
+
+.btn {
+  font-size: 12px;
+}
+
+#top {
+  background-color: #121212;
+  color: #E2E2E2;
+  font-size: 12px;
+}
+
+#center {
   z-index: 1;
 }
 
-#info-touch {
-	position: absolute;
-  top: 0px;
-  width: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-  text-align: right;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  pointer-events: none;
-  z-index: 1;
+#right {
+  background-color: #121212;
+  color: #E2E2E2;
+  font-size: 12px;
+  border-style: solid;
+  border-top-color: #2A2A2A;
+  border-bottom-color: #2A2A2A;
 }
 
-#framesBtn {
-  position: absolute;
-  top: 88px;
-  left: 5px;
-  z-index: 1;
-}
-
-#filelist {
-  position: absolute;
-  top: 10px;
-  width: 20%;
-  right: 10px;
-  z-index: 1;
+#bottom {
+  background-color: #121212;
+  color: #E2E2E2;
+  font-size: 12px;
 }
 
 #matrices {
-  background-color: white;
+  background-color: #2A2A2A;
   border-radius: 5px;
   font-size: 80%;
 }
@@ -56,17 +54,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.dropdown-menu {
-  max-height: 400px;
-  margin-bottom: 10px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
 button {
   position: absolute;
   display: block;
-  z-index: 99;
-  left: 10%;
-  top: 2%;
 }
