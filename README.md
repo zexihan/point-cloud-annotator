@@ -46,7 +46,28 @@ point-cloud-annotator
 │   │   ├── pcd
 ```
 
-TBD.
+### Control
+
+<div>
+  axis helper:
+  <font style="color:red">X</font>
+  <font style="color:lime">Y</font>
+  <font style="color:blue">Z</font>
+</div>
+
+left mouse button + move: Pan the map
+
+right mouse button + move: Rotate the view
+
+mouse wheel: Zoom up and down
+
+a/d: Previous/Next frame
+
++/-: Increase/Decrease point size
+
+c: Change color
+
+f: Mark
 
 ### PCD support
 
