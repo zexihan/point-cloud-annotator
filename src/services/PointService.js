@@ -17,7 +17,7 @@ class PointService {
     console.log(this.markedFrames);
   };
 
-  removeMarkedFrame = (fid) => {
+  removeMarkedFrame = fid => {
     var idx = this.findMarkedFrame(fid);
     this.marked_frames.splice(idx, 1);
     console.log(fid + " removed!");
@@ -36,13 +36,13 @@ class PointService {
   };
 
   // keypoints
-  addKeypoint = (selected_fid, kp_id, point) => {
-    this.keypoints[selected_fid] = {};
-    this.keypoints[selected_fid][kp_id] = point;
+  addKeypoint = (fid, keypoint_label, point) => {
+    this.keypoints[fid] = {};
+    this.keypoints[fid][keypoint_label] = point;
   };
 
-  updateKeypoint = (selected_fid, kp_id, point) => {
-    this.keypoints[selected_fid][kp_id] = point;
+  updateKeypoint = (fid, keypoint_label, point) => {
+    this.keypoints[fid][keypoint_label] = point;
   };
 
   getKeypoints = () => {

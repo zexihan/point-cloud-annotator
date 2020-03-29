@@ -23,7 +23,6 @@ raycaster.params.Points.threshold = 0.01;
 var mouse = new THREE.Vector2();
 
 var pointclouds;
-var kp_id = 0;
 
 var clock = new THREE.Clock();
 var toggle = 0;
@@ -32,7 +31,7 @@ var spheres = [];
 var spheresIndex = 0;
 
 var sphereGeometry = new THREE.SphereBufferGeometry(0.04, 32, 32);
-var sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+var sphereMaterial = new THREE.MeshBasicMaterial({ color: "#FF0000" });
 var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 sphere.scale.set(1, 1, 1);
 
@@ -60,7 +59,9 @@ class Annotator extends Component {
       loaded: 0,
       intrinsic: 0,
       extrinsic: 0,
-      point: []
+      point: [],
+      selected_keypoint_label: "",
+      selected_keypoint_color: "#FFFFFF"
     };
   }
 
@@ -302,21 +303,32 @@ class Annotator extends Component {
   };
 
   onMouseClick = event => {
-    if (event.shiftKey) {
+    if (event.shiftKey && this.state.selected_keypoint_label !== "") {
       if (selected_fid in pointService.getKeypoints() === false) {
-        pointService.addKeypoint(selected_fid, kp_id, this.state.point);
+        pointService.addKeypoint(
+          selected_fid,
+          this.state.selected_keypoint_label,
+          this.state.point
+        );
+        
       } else {
-        pointService.updateKeypoint(selected_fid, kp_id, this.state.point);
+        pointService.updateKeypoint(
+          selected_fid,
+          this.state.selected_keypoint_label,
+          this.state.point
+        );
       }
-      var sphere_new = new THREE.Mesh(sphereGeometry, sphereMaterial);
+      var sphere_newGeometry = new THREE.SphereBufferGeometry(0.04, 32, 32);
+      var sphere_newMaterial = new THREE.MeshBasicMaterial({
+        color: this.state.selected_keypoint_color
+      });
+      var sphere_new = new THREE.Mesh(sphere_newGeometry, sphere_newMaterial);
       sphere_new.position.copy(this.state.point);
       spheres.push(sphere_new.uuid);
+      scene.add(sphere_new);
       
       console.log(scene.children);
-      scene.add(sphere_new);
-      console.log(scene.children);
 
-      kp_id += 1;
       console.log(pointService.getKeypoints());
     }
   };
@@ -346,7 +358,7 @@ class Annotator extends Component {
       case 100: // d
         if (fids.indexOf(selected_fid) + 1 < fids.length) {
           selected_fid = fids[fids.indexOf(selected_fid) + 1];
-          this.onFrameNext();
+          this.onFrameUpdate();
 
           if (pointService.findMarkedFrame(selected_fid) !== -1) {
             $(".alert-success").show();
@@ -358,7 +370,7 @@ class Annotator extends Component {
       case 97: // a
         if (fids.indexOf(selected_fid) - 1 > -1) {
           selected_fid = fids[fids.indexOf(selected_fid) - 1];
-          this.onFramePrev();
+          this.onFrameUpdate();
 
           if (pointService.findMarkedFrame(selected_fid) !== -1) {
             $(".alert-success").show();
@@ -382,40 +394,29 @@ class Annotator extends Component {
     }
   };
 
-  onFrameSelect = e => {
-    selected_fid = e.target.id;
-    console.log(selected_fid);
-
+  onFrameUpdate = (e) => {
+    if (typeof e !== "undefined") {
+      selected_fid = e.target.id;
+      console.log(selected_fid);
+    }
+    
     this.removePointcloud();
     this.removeSpheres();
     // this.removeBbox();
 
     this.addPointcloud();
     // this.addBbox();
-
-    kp_id = 0;
   };
 
-  onFrameNext = () => {
-    this.removePointcloud();
-    this.removeSpheres();
-    // this.removeBbox();
-
-    this.addPointcloud();
-    // this.addBbox();
-
-    kp_id = 0;
-  };
-
-  onFramePrev = () => {
-    this.removePointcloud();
-    this.removeSpheres();
-    // this.removeBbox();
-
-    this.addPointcloud();
-    // this.addBbox();
-
-    kp_id = 0;
+  handleKeypointChange = (e) => {
+    const keypoint_label = e.target.value;
+    this.setState({ selected_keypoint_label: keypoint_label });
+    console.log(keypoint_label);
+    for (const keypoint of configs["key-points"]) {
+      if (keypoint.label === keypoint_label) {
+        this.setState({ selected_keypoint_color: keypoint.color });
+      }
+    }
   };
 
   render() {
@@ -498,22 +499,69 @@ class Annotator extends Component {
                 {configs["set_nm"]} {selected_fid}
               </strong>
             </div>
-            <div className="row m-2 list-group" id="list-tab" role="tablist">
-              {fids.map((fid, i) => (
-                <a
-                  key={i}
-                  className={`list-group-item px-2 py-1 list-group-item-action ${
-                    fid === selected_fid ? "active" : ""
-                  }`}
-                  id={fid}
-                  data-toggle="list"
-                  href={`#list-${fid}`}
-                  onClick={this.onFrameSelect}
-                >
-                  {fid}
-                </a>
-              ))}
+
+            <br />
+
+            <div className="row m-2">
+              <legend className="col-sm-3 p-0 col-form-label ">Frames</legend>
+              <div
+                className="col-sm-9 p-0 list-group"
+                id="list-tab"
+                role="tablist"
+              >
+                {fids.map((fid, i) => (
+                  <a
+                    key={i}
+                    className={`list-group-item px-2 py-1 list-group-item-action ${
+                      fid === selected_fid ? "active" : ""
+                    }`}
+                    id={fid}
+                    data-toggle="list"
+                    href={`#list-${fid}`}
+                    onClick={this.onFrameUpdate}
+                  >
+                    {fid}
+                  </a>
+                ))}
+              </div>
             </div>
+
+            <br />
+
+            <fieldset className="row m-2 form-group">
+              <div className="row">
+                <legend className="col-sm-3 col-form-label">Keypoints</legend>
+                <div className="col-sm-9">
+                  {configs["key-points"].map((keypoint, i) => (
+                    <div className="form-check" key={i}>
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        name="gridRadios"
+                        id={keypoint.label}
+                        value={keypoint.label}
+                        defaultChecked={(i = 0 ? true : false)}
+                        onChange={this.handleKeypointChange}
+                      />
+                      <label
+                        className="form-check-label"
+                        htmlFor={keypoint.label}
+                        onChange={this.handleKeypointChange}
+                      >
+                        {keypoint.label}&nbsp;&nbsp;
+                        <svg width="10" height="10">
+                          <rect
+                            width="10"
+                            height="10"
+                            style={{ fill: keypoint.color }}
+                          />
+                        </svg>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </fieldset>
             <div className="row m-2">
               {this.state.loaded !== 100 && (
                 <div>{this.state.loaded}% loaded</div>
