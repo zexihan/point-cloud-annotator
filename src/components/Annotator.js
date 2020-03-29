@@ -9,8 +9,11 @@ import Stats from "three/examples/jsm/libs/stats.module.js";
 import $ from "jquery";
 import { CSVLink } from "react-csv";
 
-import "../static/App.css";
+import "../static/Annotator.css";
 import configs from "./configs.json";
+
+import PointService from "../services/PointService";
+let pointService = PointService.getInstance();
 
 var camera, controls, scene, stats, renderer, loader, pointcloud;
 // var bboxHelperList = [];
@@ -20,16 +23,19 @@ raycaster.params.Points.threshold = 0.01;
 var mouse = new THREE.Vector2();
 
 var pointclouds;
-var keypoints = {};
 var kp_id = 0;
 
 var clock = new THREE.Clock();
 var toggle = 0;
 
+var spheres = [];
+var spheresIndex = 0;
+
 var sphereGeometry = new THREE.SphereBufferGeometry(0.04, 32, 32);
 var sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 sphere.scale.set(1, 1, 1);
+
 
 function range(start, end) {
   return new Array(end - start + 1)
@@ -37,14 +43,14 @@ function range(start, end) {
     .map((_, i) => (i + start).toString());
 }
 
-const files = range(configs["begin_fid"], configs["end_fid"]);
-// const bboxes = files;
-var fileSelected = "0";
+const fids = range(configs["begin_fid"], configs["end_fid"]);
+// const bboxes = fids;
+var selected_fid = "0";
 
-const fileFolder = configs["pcd-folder"] + "/" + configs["set_nm"];
+const frameFolder = configs["pcd-folder"] + "/" + configs["set_nm"];
 // const bboxFolder = settings["configs"]["bbox-folder"] + "/" + set_nm;
 
-var markedFrames = [];
+
 
 class Annotator extends Component {
   constructor(props) {
@@ -54,8 +60,7 @@ class Annotator extends Component {
       loaded: 0,
       intrinsic: 0,
       extrinsic: 0,
-      point: [],
-      keypoints_path: {}
+      point: []
     };
   }
 
@@ -166,7 +171,7 @@ class Annotator extends Component {
     pointcloud = new THREE.Points(new THREE.Geometry(), new THREE.Material());
     loader = new PCDLoader();
     loader.load(
-      fileFolder + "/" + fileSelected + ".pcd",
+      frameFolder + "/" + selected_fid + ".pcd",
       points => {
         pointcloud = points;
 
@@ -195,8 +200,8 @@ class Annotator extends Component {
   };
 
   // addBbox = () => {
-  //   if (bboxes.includes(fileSelected)) {
-  //     fetch(bboxFolder + '/' + fileSelected + '.txt')
+  //   if (bboxes.includes(selected_fid)) {
+  //     fetch(bboxFolder + '/' + selected_fid + '.txt')
   //       .then((res) => res.text())
   //       .then(text => {
   //         var lines = text.split(/\r\n|\n/);
@@ -224,6 +229,17 @@ class Annotator extends Component {
 
   removePointcloud = () => {
     scene.remove(pointcloud);
+  };
+
+  removeSpheres = () => {
+    spheres.map(i => {
+      const object = scene.getObjectByProperty("uuid", i);
+      object.geometry.dispose();
+      object.material.dispose();
+      scene.remove(object);
+    });
+    renderer.renderLists.dispose();
+    spheres = [];
   };
 
   // removeBbox = () => {
@@ -264,7 +280,6 @@ class Annotator extends Component {
           point: intersection.point
         });
         sphere.position.copy(intersection.point);
-
         toggle = 0;
       }
     }
@@ -288,20 +303,21 @@ class Annotator extends Component {
 
   onMouseClick = event => {
     if (event.shiftKey) {
-      if (fileSelected in keypoints === false) {
-        keypoints[fileSelected] = {};
-        keypoints[fileSelected][kp_id] = this.state.point;
+      if (selected_fid in pointService.getKeypoints() === false) {
+        pointService.addKeypoint(selected_fid, kp_id, this.state.point);
       } else {
-        keypoints[fileSelected][kp_id] = this.state.point;
+        pointService.updateKeypoint(selected_fid, kp_id, this.state.point);
       }
+      var sphere_new = new THREE.Mesh(sphereGeometry, sphereMaterial);
+      sphere_new.position.copy(this.state.point);
+      spheres.push(sphere_new.uuid);
+      
+      console.log(scene.children);
+      scene.add(sphere_new);
+      console.log(scene.children);
+
       kp_id += 1;
-      console.log(keypoints);
-      this.setState({
-          keypoints_path: {
-            pathname:'/keypoints',
-            state: keypoints
-          }
-      });
+      console.log(pointService.getKeypoints());
     }
   };
 
@@ -313,8 +329,7 @@ class Annotator extends Component {
 
   onKeyPress = e => {
     console.log(e.keyCode);
-    var points = scene.getObjectByName(fileSelected + ".pcd");
-    var flag;
+    var points = scene.getObjectByName(selected_fid + ".pcd");
     switch (e.keyCode) {
       case 61: // +
         points.material.size *= 1.2;
@@ -329,55 +344,36 @@ class Annotator extends Component {
         points.material.needsUpdate = true;
         break;
       case 100: // d
-        if (files.indexOf(fileSelected) + 1 < files.length) {
-          fileSelected = files[files.indexOf(fileSelected) + 1];
-          this.onFileNext();
+        if (fids.indexOf(selected_fid) + 1 < fids.length) {
+          selected_fid = fids[fids.indexOf(selected_fid) + 1];
+          this.onFrameNext();
 
-          flag = false;
-          for (const markedFrame of markedFrames) {
-            if (markedFrame[0] === fileSelected) flag = true;
-          }
-          if (flag) {
+          if (pointService.findMarkedFrame(selected_fid) !== -1) {
             $(".alert-success").show();
           } else {
             $(".alert-success").hide();
           }
-
-          kp_id = 0;
         }
         break;
       case 97: // a
-        if (files.indexOf(fileSelected) - 1 > -1) {
-          fileSelected = files[files.indexOf(fileSelected) - 1];
-          this.onFilePrev();
+        if (fids.indexOf(selected_fid) - 1 > -1) {
+          selected_fid = fids[fids.indexOf(selected_fid) - 1];
+          this.onFramePrev();
 
-          flag = false;
-          for (const markedFrame of markedFrames) {
-            if (markedFrame[0] === fileSelected) flag = true;
-          }
-          if (flag) {
+          if (pointService.findMarkedFrame(selected_fid) !== -1) {
             $(".alert-success").show();
           } else {
             $(".alert-success").hide();
           }
-
-          kp_id = 0;
         }
         break;
       case 102: // f
-        var idx = -1;
-        for (var i = 0; i < markedFrames.length; i++) {
-          if (markedFrames[i][0] === fileSelected) idx = i;
-        }
+        var idx = pointService.findMarkedFrame(selected_fid);
         if (idx === -1) {
-          markedFrames.push([fileSelected]);
-          console.log(fileSelected + " added!");
-          console.log(markedFrames);
+          pointService.addMarkedFrame(selected_fid);
           $(".alert-success").show();
         } else {
-          markedFrames.splice(idx, 1);
-          console.log(fileSelected + " removed!");
-          console.log(markedFrames);
+          pointService.removeMarkedFrame(selected_fid);
           $(".alert-success").hide();
         }
         break;
@@ -386,35 +382,40 @@ class Annotator extends Component {
     }
   };
 
-  onFileSelect = e => {
-    fileSelected = e.target.id;
-    console.log(fileSelected);
+  onFrameSelect = e => {
+    selected_fid = e.target.id;
+    console.log(selected_fid);
 
     this.removePointcloud();
+    this.removeSpheres();
     // this.removeBbox();
 
     this.addPointcloud();
     // this.addBbox();
+
+    kp_id = 0;
   };
 
-  onFileNext = () => {
+  onFrameNext = () => {
     this.removePointcloud();
+    this.removeSpheres();
     // this.removeBbox();
 
     this.addPointcloud();
     // this.addBbox();
+
+    kp_id = 0;
   };
 
-  onFilePrev = () => {
+  onFramePrev = () => {
     this.removePointcloud();
+    this.removeSpheres();
     // this.removeBbox();
 
     this.addPointcloud();
     // this.addBbox();
-  };
 
-  displayKeypoints = () => {
-    this.props.displayKeypoints(keypoints);
+    kp_id = 0;
   };
 
   render() {
@@ -447,7 +448,7 @@ class Annotator extends Component {
             <div className="row mr-1 justify-content-end">
               <CSVLink
                 className="btn btn-dark"
-                data={markedFrames}
+                data={pointService.getMarkedFrames()}
                 enclosingCharacter={``}
                 filename={
                   configs["mark-folder"] +
@@ -461,8 +462,13 @@ class Annotator extends Component {
               </CSVLink>
             </div>
             <div className="row my-2 mr-1 justify-content-end">
-              <CopyToClipboard text={JSON.stringify(keypoints)} onCopy={this.onCopy}>
-                <button className="btn btn-dark">Copy keypoints to clipboard</button>
+              <CopyToClipboard
+                text={JSON.stringify(pointService.getKeypoints())}
+                onCopy={this.onCopy}
+              >
+                <button className="btn btn-dark">
+                  Copy keypoints to clipboard
+                </button>
               </CopyToClipboard>
             </div>
           </div>
@@ -489,22 +495,22 @@ class Annotator extends Component {
           >
             <div className="row m-2 alert alert-info">
               <strong>
-                {configs["set_nm"]} {fileSelected}
+                {configs["set_nm"]} {selected_fid}
               </strong>
             </div>
             <div className="row m-2 list-group" id="list-tab" role="tablist">
-              {files.map((filename, i) => (
+              {fids.map((fid, i) => (
                 <a
                   key={i}
                   className={`list-group-item px-2 py-1 list-group-item-action ${
-                    filename === fileSelected ? "active" : ""
+                    fid === selected_fid ? "active" : ""
                   }`}
-                  id={filename}
+                  id={fid}
                   data-toggle="list"
-                  href={`#list-${filename}`}
-                  onClick={this.onFileSelect}
+                  href={`#list-${fid}`}
+                  onClick={this.onFrameSelect}
                 >
-                  {filename}
+                  {fid}
                 </a>
               ))}
             </div>

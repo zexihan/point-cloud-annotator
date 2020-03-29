@@ -1,9 +1,9 @@
 import React, { Component } from "react";
 import { BrowserRouter, Route } from "react-router-dom";
 
-import Annotator from "./Annotator";
+import Annotator from "./components/Annotator";
 
-class App extends Component {
+class RouterBoard extends Component {
   render() {
     return (
       <div>
@@ -23,4 +23,4 @@ class App extends Component {
   }
 }
 
-export default App;
+export default RouterBoard;
