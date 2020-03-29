@@ -67,7 +67,9 @@ a/d: Previous/Next frame
 
 c: Change color
 
-f: Mark
+f: Mark/Unmark
+
+shift + left mouse button: Add/Remove key point
 
 ### PCD support
 
