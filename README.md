@@ -26,25 +26,39 @@ npm install
 npm start
 ```
 
-Runs the app in the development mode.<br>
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 The page will reload if you make edits.<br>
 You will also see any lint errors in the console.
 
+#### (Optional) Edit the configs.json.
+
+By default, point clouds are served from a subfolder in <code>public/data/pcd</code>. Sample person point clouds are included in <code>public/data/pcd/person</code>.
+
+```
+{
+    "set_nm": "person",
+    "begin_fid": 0,
+    "end_fid": 6,
+    "pcd_folder": "./data/pcd",
+    "bbox_folder": "./data/bbox",
+    "keypoints_folder": "./data/keypoints",
+    "keypoints": [
+        {"label": "left_ear", "color": "#9A3254"},
+        {"label": "right_ear", "color": "#E85D88"},
+        {"label": "left_shoulder", "color": "#FF8815"},
+        {"label": "right_shoulder", "color": "#FFE832"},
+        {"label": "left_elbow", "color": "#1FB93E"},
+        {"label": "right_elbow", "color": "#1AAEAA"},
+        {"label": "left_wrist", "color": "#83BCFF"},
+        {"label": "right_wrist", "color": "#208BFB"},
+        {"label": "left_hip", "color": "#54351A"},
+        {"label": "right_hip", "color": "#5D36E1"}
+    ]
+}
+```
+
 ## How to use
-
-### Prepare data
-
-```
-point-cloud-annotator
-├── public
-│   ├── data
-│   │   ├── bbox
-│   │   ├── keypoints
-│   │   ├── mark
-│   │   ├── pcd
-```
 
 ### Control
 
