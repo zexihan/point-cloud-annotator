@@ -12,6 +12,12 @@ a, a:hover {
   border-style: none;
 }
 
+.alert-success {
+  height: 5%;
+  line-height:5%;
+  text-align: center;
+}
+
 .btn {
   font-size: 12px;
 }

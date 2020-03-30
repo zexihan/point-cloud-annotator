@@ -37,16 +37,18 @@ class PointService {
 
   // keypoints
   addKeypoint = (fid, keypoint_label, point) => {
-    this.keypoints[fid] = {};
-    this.keypoints[fid][keypoint_label] = point;
-  };
-
-  updateKeypoint = (fid, keypoint_label, point) => {
+    if (typeof this.keypoints[fid] === "undefined") {
+      this.keypoints[fid] = {};
+    }
     this.keypoints[fid][keypoint_label] = point;
   };
 
   getKeypoints = () => {
     return this.keypoints;
+  };
+
+  removeKeypointsByFrame = (fid) => {
+    delete this.keypoints[fid];
   };
 }
 

@@ -10,7 +10,7 @@ import $ from "jquery";
 import { CSVLink } from "react-csv";
 
 import "../static/Annotator.css";
-import configs from "./configs.json";
+import configs from "../configs.json";
 
 import PointService from "../services/PointService";
 let pointService = PointService.getInstance();
@@ -27,8 +27,7 @@ var pointclouds;
 var clock = new THREE.Clock();
 var toggle = 0;
 
-var spheres = [];
-var spheresIndex = 0;
+var sphereKps = []; // array of {uuid, keypoint_label}
 
 var sphereGeometry = new THREE.SphereBufferGeometry(0.04, 32, 32);
 var sphereMaterial = new THREE.MeshBasicMaterial({ color: "#FF0000" });
@@ -46,8 +45,8 @@ const fids = range(configs["begin_fid"], configs["end_fid"]);
 // const bboxes = fids;
 var selected_fid = "0";
 
-const frameFolder = configs["pcd-folder"] + "/" + configs["set_nm"];
-// const bboxFolder = settings["configs"]["bbox-folder"] + "/" + set_nm;
+const frameFolder = configs["pcd_folder"] + "/" + configs["set_nm"];
+// const bboxFolder = settings["configs"]["bbox_folder"] + "/" + set_nm;
 
 
 
@@ -232,15 +231,49 @@ class Annotator extends Component {
     scene.remove(pointcloud);
   };
 
-  removeSpheres = () => {
-    spheres.map(i => {
-      const object = scene.getObjectByProperty("uuid", i);
+  removeSphereKps = () => {
+    sphereKps.map(pair => {
+      const object = scene.getObjectByProperty("uuid", pair.uuid);
       object.geometry.dispose();
       object.material.dispose();
       scene.remove(object);
     });
     renderer.renderLists.dispose();
-    spheres = [];
+    sphereKps = [];
+  };
+
+  showSphereKps = () => {
+    const keypoints = pointService.getKeypoints();
+    if (typeof keypoints[selected_fid] !== "undefined") {
+      console.log("existed");
+
+      var keypoint_labels = Object.keys(keypoints[selected_fid]);
+
+      for (const keypoint_label of keypoint_labels) {
+        for (const keypoint of configs["keypoints"]) {
+          if (keypoint.label === keypoint_label) {
+            var keypoint_color = keypoint.color;
+          }
+        }
+        var sphereKpGeometry = new THREE.SphereBufferGeometry(0.04, 32, 32);
+        var sphereKpMaterial = new THREE.MeshBasicMaterial({
+          color: keypoint_color
+        });
+        var sphereKp = new THREE.Mesh(sphereKpGeometry, sphereKpMaterial);
+        sphereKp.position.copy(keypoints[selected_fid][keypoint_label]);
+        sphereKps.push({
+          uuid: sphereKp.uuid,
+          keypoint_label: keypoint_label
+        });
+        scene.add(sphereKp);
+      }
+    }
+  };
+
+  clearCurFrameKps = () => {
+    console.log("clear");
+    pointService.removeKeypointsByFrame(selected_fid);
+    this.removeSphereKps();
   };
 
   // removeBbox = () => {
@@ -290,43 +323,49 @@ class Annotator extends Component {
     renderer.render(scene, camera);
   };
 
-  onMouseMove = event => {
+  onMouseMove = e => {
     // calculate mouse position in normalized device coordinates
     // (-1 to +1) for both components
-    event.preventDefault();
-    mouse.x = (event.clientX / this.mount.clientWidth) * 2 - 1;
+    e.preventDefault();
+    mouse.x = (e.clientX / this.mount.clientWidth) * 2 - 1;
     mouse.y =
-      -((event.clientY - 0.1 * window.innerHeight) / this.mount.clientHeight) *
-        2 +
+      -((e.clientY - 0.1 * window.innerHeight) / this.mount.clientHeight) * 2 +
       1;
     console.log();
   };
 
-  onMouseClick = event => {
-    if (event.shiftKey && this.state.selected_keypoint_label !== "") {
-      if (selected_fid in pointService.getKeypoints() === false) {
-        pointService.addKeypoint(
-          selected_fid,
-          this.state.selected_keypoint_label,
-          this.state.point
-        );
-        
-      } else {
-        pointService.updateKeypoint(
-          selected_fid,
-          this.state.selected_keypoint_label,
-          this.state.point
-        );
+  onMouseClick = e => {
+    if (e.shiftKey && this.state.selected_keypoint_label !== "") {
+      pointService.addKeypoint(
+        selected_fid,
+        this.state.selected_keypoint_label,
+        this.state.point
+      );
+
+      var found = false;
+      var sphereKp;
+      for (const pair of sphereKps) {
+        if (pair.keypoint_label === this.state.selected_keypoint_label) {
+          sphereKp = scene.getObjectByProperty("uuid", pair.uuid);
+          sphereKp.position.copy(this.state.point);
+          found = true;
+          break;
+        }
       }
-      var sphere_newGeometry = new THREE.SphereBufferGeometry(0.04, 32, 32);
-      var sphere_newMaterial = new THREE.MeshBasicMaterial({
-        color: this.state.selected_keypoint_color
-      });
-      var sphere_new = new THREE.Mesh(sphere_newGeometry, sphere_newMaterial);
-      sphere_new.position.copy(this.state.point);
-      spheres.push(sphere_new.uuid);
-      scene.add(sphere_new);
-      
+      if (!found) {
+        var sphereKpGeometry = new THREE.SphereBufferGeometry(0.04, 32, 32);
+        var sphereKpMaterial = new THREE.MeshBasicMaterial({
+          color: this.state.selected_keypoint_color
+        });
+        sphereKp = new THREE.Mesh(sphereKpGeometry, sphereKpMaterial);
+        sphereKp.position.copy(this.state.point);
+        sphereKps.push({
+          uuid: sphereKp.uuid,
+          keypoint_label: this.state.selected_keypoint_label
+        });
+        scene.add(sphereKp);
+      }
+
       console.log(scene.children);
 
       console.log(pointService.getKeypoints());
@@ -394,25 +433,27 @@ class Annotator extends Component {
     }
   };
 
-  onFrameUpdate = (e) => {
+  onFrameUpdate = e => {
     if (typeof e !== "undefined") {
       selected_fid = e.target.id;
       console.log(selected_fid);
     }
-    
+
     this.removePointcloud();
-    this.removeSpheres();
+    this.removeSphereKps();
     // this.removeBbox();
+
+    this.showSphereKps();
 
     this.addPointcloud();
     // this.addBbox();
   };
 
-  handleKeypointChange = (e) => {
+  handleKeypointChange = e => {
     const keypoint_label = e.target.value;
     this.setState({ selected_keypoint_label: keypoint_label });
     console.log(keypoint_label);
-    for (const keypoint of configs["key-points"]) {
+    for (const keypoint of configs["keypoints"]) {
       if (keypoint.label === keypoint_label) {
         this.setState({ selected_keypoint_color: keypoint.color });
       }
@@ -452,8 +493,6 @@ class Annotator extends Component {
                 data={pointService.getMarkedFrames()}
                 enclosingCharacter={``}
                 filename={
-                  configs["mark-folder"] +
-                  "/" +
                   "marks_" +
                   configs["set_nm"] +
                   ".txt"
@@ -532,7 +571,7 @@ class Annotator extends Component {
               <div className="row">
                 <legend className="col-sm-3 col-form-label">Keypoints</legend>
                 <div className="col-sm-9">
-                  {configs["key-points"].map((keypoint, i) => (
+                  {configs["keypoints"].map((keypoint, i) => (
                     <div className="form-check" key={i}>
                       <input
                         className="form-check-input"
@@ -559,17 +598,15 @@ class Annotator extends Component {
                       </label>
                     </div>
                   ))}
+                  <button
+                    className="btn mt-2 btn-dark"
+                    onClick={this.clearCurFrameKps}
+                  >
+                    Clear
+                  </button>
                 </div>
               </div>
             </fieldset>
-            <div className="row m-2">
-              {this.state.loaded !== 100 && (
-                <div>{this.state.loaded}% loaded</div>
-              )}
-            </div>
-            <div className="row m-2 alert alert-success" role="alert">
-              Marked!
-            </div>
           </div>
         </div>
 
@@ -584,6 +621,14 @@ class Annotator extends Component {
               &nbsp; y: {this.state.point.y ? this.state.point.y.toFixed(4) : 0}
               &nbsp; z: {this.state.point.z ? this.state.point.z.toFixed(4) : 0}
             </p>
+          </div>
+          <div className="col alert alert-success" role="alert">
+            Marked!
+          </div>
+          <div className="col">
+            {this.state.loaded !== 100 && (
+              <div>{this.state.loaded}% loaded</div>
+            )}
           </div>
         </div>
       </div>
