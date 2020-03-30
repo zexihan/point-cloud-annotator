@@ -503,7 +503,7 @@ class Annotator extends Component {
             </div>
             <div className="row my-2 mr-1 justify-content-end">
               <CopyToClipboard
-                text={JSON.stringify(pointService.getKeypoints())}
+                text={JSON.stringify(pointService.getKeypoints(), null, 2)}
                 onCopy={this.onCopy}
               >
                 <button className="btn btn-dark">
