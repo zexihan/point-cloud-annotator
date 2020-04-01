@@ -38,12 +38,12 @@ sphere.scale.set(1, 1, 1);
 function range(start, end) {
   return new Array(end - start + 1)
     .fill(undefined)
-    .map((_, i) => (i + start).toString());
+    .map((_, i) => (i + start).toString().padStart(6, "0"));
 }
 
 const fids = range(configs["begin_fid"], configs["end_fid"]);
 // const bboxes = fids;
-var selected_fid = "0";
+var selected_fid = fids[0];
 
 const frameFolder = configs["pcd_folder"] + "/" + configs["set_nm"];
 // const bboxFolder = settings["configs"]["bbox_folder"] + "/" + set_nm;
@@ -617,9 +617,9 @@ class Annotator extends Component {
         >
           <div className="col">
             <p>
-              x: {this.state.point.x ? this.state.point.x.toFixed(4) : 0}
-              &nbsp; y: {this.state.point.y ? this.state.point.y.toFixed(4) : 0}
-              &nbsp; z: {this.state.point.z ? this.state.point.z.toFixed(4) : 0}
+              <font style={{ color: "red" }}>x</font>: {this.state.point.x ? this.state.point.x.toFixed(4) : 0}
+              &nbsp; <font style={{ color: "lime" }}>y</font>: {this.state.point.y ? this.state.point.y.toFixed(4) : 0}
+              &nbsp; <font style={{ color: "blue" }}>z</font>: {this.state.point.z ? this.state.point.z.toFixed(4) : 0}
             </p>
           </div>
           <div className="col alert alert-success" role="alert">

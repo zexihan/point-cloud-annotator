@@ -54,7 +54,7 @@ a, a:hover {
 }
 
 .list-group {
-  max-height: 400px;
+  max-height: 300px;
   margin-bottom: 10px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
