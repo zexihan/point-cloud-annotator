@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "bootstrap": "^4.4.1",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.0",
     "react": "^16.13.1",
     "react-copy-to-clipboard": "^5.0.2",
     "react-csv": "^2.0.1",
